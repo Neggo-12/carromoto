@@ -1,0 +1,117 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Tema claro — marca propia del vertical carro/moto.
+       Azul taller (--primary) para confianza/técnico,
+       naranja herramienta (--accent) para CTAs y urgencia. */
+    --background: 210 20% 97%;
+    --foreground: 222 32% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 32% 12%;
+
+    --primary: 226 68% 51%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 18% 93%;
+    --secondary-foreground: 222 32% 12%;
+
+    --muted: 210 18% 93%;
+    --muted-foreground: 215 16% 42%;
+
+    --accent: 24 95% 53%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214 20% 88%;
+    --input: 214 20% 88%;
+    --ring: 226 68% 51%;
+
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer utilities {
+  .font-mono {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+  }
+
+  .glow-brand {
+    box-shadow: 0 0 20px -5px hsl(226 68% 51% / 0.35), 0 0 40px -10px hsl(226 68% 51% / 0.18);
+  }
+
+  .glow-signal {
+    box-shadow: 0 0 20px -5px hsl(24 95% 53% / 0.4), 0 0 40px -10px hsl(24 95% 53% / 0.2);
+  }
+
+  /* ── Fondo futurista del Hub ─────────────────────────────────
+     Orbes que flotan lento + grilla técnica que se desplaza muy
+     sutil, para dar sensación de "escaneo" sin distraer del copy. */
+  .bg-grid-scan {
+    background-image:
+      linear-gradient(hsl(226 68% 51% / 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(226 68% 51% / 0.06) 1px, transparent 1px);
+    background-size: 44px 44px;
+    animation: grid-pan 22s linear infinite;
+  }
+
+  @keyframes grid-pan {
+    0% { background-position: 0 0; }
+    100% { background-position: 44px 44px; }
+  }
+
+  .animate-float-slow {
+    animation: float-slow 9s ease-in-out infinite;
+  }
+
+  .animate-float-slower {
+    animation: float-slow 13s ease-in-out infinite reverse;
+  }
+
+  @keyframes float-slow {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(18px, -22px) scale(1.06); }
+  }
+
+  .animate-scan-line {
+    animation: scan-line 4s ease-in-out infinite;
+  }
+
+  @keyframes scan-line {
+    0% { transform: translateY(-100%); opacity: 0; }
+    10% { opacity: 0.5; }
+    90% { opacity: 0.5; }
+    100% { transform: translateY(100%); opacity: 0; }
+  }
+
+  .animate-radar-ping {
+    animation: radar-ping 2.6s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+
+  @keyframes radar-ping {
+    0% { transform: scale(0.9); opacity: 0.6; }
+    75%, 100% { transform: scale(1.9); opacity: 0; }
+  }
+}
