@@ -436,9 +436,9 @@ export default function RegistroTaller() {
                   identidad para activar tu Sello de Confianza — te avisamos apenas esté disponible.
                 </p>
               )}
-              <Link to={requiereConfirmacion ? "/login/taller" : "/talleres"} className="mt-7 inline-block">
+              <Link to={requiereConfirmacion ? "/login/taller" : "/portal/taller"} className="mt-7 inline-block">
                 <Button as="span" variant="signal" size="lg">
-                  {requiereConfirmacion ? "Ir a iniciar sesión" : "Volver a la página de talleres"}
+                  {requiereConfirmacion ? "Ir a iniciar sesión" : "Ir a mi panel"}
                 </Button>
               </Link>
             </motion.div>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Mail, ArrowRight, Store, AlertCircle } from "lucide-react";
 import { AuthLayout } from "@/components/AuthLayout";
@@ -10,23 +10,48 @@ import { useAuth } from "@/lib/AuthProvider";
 export default function LoginTaller() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { iniciarSesion } = useAuth();
+  const { iniciarSesion, session, perfil } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [recordarme, setRecordarme] = useState(true);
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState("");
+  // Ver LoginCliente.tsx: esperamos a que session/perfil del AuthProvider
+  // reflejen el login real antes de navegar, en vez de navegar apenas se
+  // resuelve la promesa de signInWithPassword (eso causaba que hiciera
+  // falta darle "Iniciar sesión" dos veces).
+  const [intentoLogin, setIntentoLogin] = useState(false);
 
   const avisoRolIncorrecto = (location.state as { motivo?: string } | null)?.motivo === "rol_incorrecto";
+
+  useEffect(() => {
+    if (!intentoLogin) return;
+    if (session && perfil) {
+      navigate("/portal/taller");
+    }
+  }, [intentoLogin, session, perfil, navigate]);
+
+  useEffect(() => {
+    if (!intentoLogin || (session && perfil)) return;
+    const timeout = setTimeout(() => {
+      setEnviando(false);
+      setIntentoLogin(false);
+      setError("No se pudo cargar tu sesión. Intentá de nuevo.");
+    }, 8000);
+    return () => clearTimeout(timeout);
+  }, [intentoLogin, session, perfil]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setEnviando(true);
     const { error: err } = await iniciarSesion(email, password);
-    setEnviando(false);
-    if (err) return setError(err);
-    navigate("/portal/taller");
+    if (err) {
+      setEnviando(false);
+      setError(err);
+      return;
+    }
+    setIntentoLogin(true);
   }
 
   return (

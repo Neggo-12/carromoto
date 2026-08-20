@@ -239,9 +239,9 @@ export default function RegistroCliente() {
                   nada que llenar de una sola vez.
                 </p>
               )}
-              <Link to={requiereConfirmacion ? "/login/cliente" : "/clientes"} className="mt-7 inline-block">
+              <Link to={requiereConfirmacion ? "/login/cliente" : "/portal/cliente"} className="mt-7 inline-block">
                 <Button as="span" variant="brand" size="lg">
-                  {requiereConfirmacion ? "Ir a iniciar sesión" : "Ir a buscar un taller"}
+                  {requiereConfirmacion ? "Ir a iniciar sesión" : "Ir a mi portal"}
                 </Button>
               </Link>
             </motion.div>

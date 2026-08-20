@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Mail, ArrowRight, UserCircle, AlertCircle } from "lucide-react";
 import { AuthLayout } from "@/components/AuthLayout";
@@ -10,23 +10,51 @@ import { useAuth } from "@/lib/AuthProvider";
 export default function LoginCliente() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { iniciarSesion } = useAuth();
+  const { iniciarSesion, session, perfil } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [recordarme, setRecordarme] = useState(true);
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState("");
+  // Tras un login exitoso, supabase-js resuelve signInWithPassword antes de
+  // que el propio AuthProvider (via onAuthStateChange + cargarPerfil, ambos
+  // async) termine de poblar session/perfil. Si navegamos apenas se resuelve
+  // esa promesa, RequireAuth puede alcanzar a renderizar con session/perfil
+  // todavía en null y rebotar al usuario de vuelta al login — de ahí que
+  // antes hiciera falta darle "Iniciar sesión" dos veces. Ahora esperamos a
+  // que session/perfil reflejen el login real antes de navegar.
+  const [intentoLogin, setIntentoLogin] = useState(false);
 
   const avisoRolIncorrecto = (location.state as { motivo?: string } | null)?.motivo === "rol_incorrecto";
+
+  useEffect(() => {
+    if (!intentoLogin) return;
+    if (session && perfil) {
+      navigate("/portal/cliente");
+    }
+  }, [intentoLogin, session, perfil, navigate]);
+
+  useEffect(() => {
+    if (!intentoLogin || (session && perfil)) return;
+    const timeout = setTimeout(() => {
+      setEnviando(false);
+      setIntentoLogin(false);
+      setError("No se pudo cargar tu sesión. Intentá de nuevo.");
+    }, 8000);
+    return () => clearTimeout(timeout);
+  }, [intentoLogin, session, perfil]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setEnviando(true);
     const { error: err } = await iniciarSesion(email, password);
-    setEnviando(false);
-    if (err) return setError(err);
-    navigate("/portal/cliente");
+    if (err) {
+      setEnviando(false);
+      setError(err);
+      return;
+    }
+    setIntentoLogin(true);
   }
 
   return (

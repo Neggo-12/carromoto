@@ -231,9 +231,9 @@ export interface MotorizacionOption {
 }
 
 export const OPCIONES_MOTORIZACION: MotorizacionOption[] = [
-  { value: "combustion", label: "No", description: "Motor a combustión" },
-  { value: "electrico", label: "Eléctrico" },
-  { value: "hibrido", label: "Híbrido" },
+  { value: "combustion", label: "Combustión", description: "Motor a gasolina o diésel" },
+  { value: "electrico", label: "Eléctrico", description: "100% a batería" },
+  { value: "hibrido", label: "Híbrido", description: "Combina combustión y eléctrico" },
 ];
 
 export const REPUESTOS_CARRO: ServicioOption[] = [
