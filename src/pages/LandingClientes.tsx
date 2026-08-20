@@ -56,9 +56,15 @@ export default function LandingClientes() {
             </div>
             <span className="text-lg font-extrabold tracking-tight text-foreground">Taller Aval</span>
           </Link>
-          <div className="flex items-center gap-3">
-            <a href="#como-funciona" className="hidden sm:inline text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">Cómo funciona</a>
-            <Link to="/login/cliente" className="hidden sm:inline text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">Iniciar sesión</Link>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <a href="#como-funciona" className="hidden lg:inline text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">Cómo funciona</a>
+            {/* Visible en todas las resoluciones — antes tenía "hidden sm:inline"
+                y en celular desaparecía, dejando "Crear cuenta" como única
+                opción visible en el navbar. */}
+            <Button as={Link} to="/login/cliente" variant="outline" size="sm">
+              <span className="sm:hidden">Entrar</span>
+              <span className="hidden sm:inline">Iniciar sesión</span>
+            </Button>
             <Button as={Link} to="/registro/cliente" variant="brand" size="sm">
               Crear cuenta
             </Button>

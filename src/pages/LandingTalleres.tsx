@@ -53,12 +53,21 @@ export default function LandingTalleres() {
             </div>
             <span className="text-lg font-extrabold tracking-tight text-foreground">Taller Aval</span>
           </Link>
-          <div className="flex items-center gap-3">
-            <a href="#features" className="hidden sm:inline text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">Beneficios</a>
-            <a href="#como-funciona" className="hidden sm:inline text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">Cómo funciona</a>
-            <Link to="/login/taller" className="hidden sm:inline text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">Iniciar sesión</Link>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <a href="#features" className="hidden lg:inline text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">Beneficios</a>
+            <a href="#como-funciona" className="hidden lg:inline text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">Cómo funciona</a>
+            {/* Visible en todas las resoluciones — antes tenía "hidden sm:inline"
+                y en celular directamente desaparecía, dejando "Registrar mi
+                taller" como única opción visible en el navbar. Con variant
+                outline queda clara la jerarquía: acceso secundario elegante al
+                lado del CTA principal, no un link gris perdido. */}
+            <Button as={Link} to="/login/taller" variant="outline" size="sm">
+              <span className="sm:hidden">Entrar</span>
+              <span className="hidden sm:inline">Iniciar sesión</span>
+            </Button>
             <Button as={Link} to="/registro/taller" variant="signal" size="sm">
-              Registrar mi taller
+              <span className="sm:hidden">Registrarme</span>
+              <span className="hidden sm:inline">Registrar mi taller</span>
             </Button>
           </div>
         </div>
