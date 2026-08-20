@@ -18,6 +18,7 @@ import {
 } from "@/lib/data";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/lib/AuthProvider";
+import { geocodificarDireccion } from "@/lib/geocoding";
 import { cn } from "@/lib/utils";
 
 export const DESCRIPCION_NEGOCIO_MIN = 40;
@@ -212,17 +213,26 @@ export default function TallerPerfil() {
       servicios: data.servicios,
       horario: data.horario,
     };
+    const orgUpdate: Record<string, unknown> = {
+      name: data.nombreNegocio,
+      type: data.tipoNegocio,
+      ciudad: data.ciudad,
+      metadata,
+      descripcion_negocio: data.descripcionNegocio,
+    };
+    // Mejor esfuerzo: si hay dirección y ciudad, geocodificamos para
+    // mantener organizations.latitude/longitude al día (las usa el buscador
+    // por dirección de la Home pública). Si falla (dirección ambigua, sin
+    // red) simplemente no tocamos las coordenadas — no bloquea el guardado.
+    if (data.direccion.trim() && data.ciudad) {
+      const coords = await geocodificarDireccion(`${data.direccion}, ${data.ciudad}, Colombia`);
+      if (coords) {
+        orgUpdate.latitude = coords.lat;
+        orgUpdate.longitude = coords.lng;
+      }
+    }
     const [{ error: orgError }, { error: userError }] = await Promise.all([
-      supabase
-        .from("organizations")
-        .update({
-          name: data.nombreNegocio,
-          type: data.tipoNegocio,
-          ciudad: data.ciudad,
-          metadata,
-          descripcion_negocio: data.descripcionNegocio,
-        })
-        .eq("id", perfil.organizationId),
+      supabase.from("organizations").update(orgUpdate).eq("id", perfil.organizationId),
       supabase.from("users").update({ nombre: data.encargadoNombre, celular: data.celular }).eq("id", perfil.id),
     ]);
     setGuardando(false);

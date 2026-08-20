@@ -22,11 +22,14 @@ import { TextareaField } from "@/components/Textarea";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/lib/AuthProvider";
 import { cn } from "@/lib/utils";
+import { leerBusquedaPendiente, limpiarBusquedaPendiente } from "@/lib/geocoding";
 
 // Fila real que devuelve buscar_comercios_verificados() — ver
 // supabase/migrations/0007_buscar_talleres_datos_reales.sql. Ya no hay data
 // de ejemplo acá: esto lee directo del taller que un admin haya aprobado y
-// sellado de verdad.
+// sellado de verdad. `distancia_km` solo viene poblado cuando la fila salió
+// de buscar_talleres_cercanos() (búsqueda por dirección que vino de la Home
+// pública) — la búsqueda por nombre de acá abajo no la usa.
 interface TallerVerificado {
   id: string;
   name: string;
@@ -37,6 +40,7 @@ interface TallerVerificado {
   descripcion_negocio: string | null;
   afiliado_desde: string;
   codigo_publico: string;
+  distancia_km?: number;
 }
 
 interface ContactoTaller {
@@ -76,6 +80,11 @@ function TallerCard({ taller, onContactar }: { taller: TallerVerificado; onConta
           <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold text-emerald-700">
             <ShieldCheck className="h-3 w-3" /> Sello de Confianza
           </span>
+          {typeof taller.distancia_km === "number" && (
+            <span className="rounded-full bg-brand-500/10 px-2.5 py-1 text-[10px] font-bold text-brand-700">
+              {taller.distancia_km < 1 ? "A menos de 1 km" : `A ${taller.distancia_km.toFixed(1)} km`}
+            </span>
+          )}
           <span
             className="text-[10px] font-mono text-muted-foreground/60"
             title="Código único — confírmalo con el taller para verificar su identidad"
@@ -339,6 +348,14 @@ export default function ClienteBuscarTalleres() {
   const [contactando, setContactando] = useState<TallerVerificado | null>(null);
   const [contactos, setContactos] = useState<ContactoTaller[]>([]);
 
+  // Búsqueda por dirección que el usuario dejó a medias en la Home pública
+  // antes de registrarse/iniciar sesión (ver LandingHub.tsx + geocoding.ts).
+  // Se consume una sola vez al entrar acá — direccionCercana null significa
+  // "no había ninguna pendiente", no "todavía no cargó".
+  const [direccionCercana, setDireccionCercana] = useState<string | null>(null);
+  const [resultadosCercanos, setResultadosCercanos] = useState<TallerVerificado[]>([]);
+  const [cargandoCercanos, setCargandoCercanos] = useState(false);
+
   const cargarContactos = useCallback(async () => {
     if (!session) return;
     const { data } = await supabase
@@ -351,6 +368,25 @@ export default function ClienteBuscarTalleres() {
   useEffect(() => {
     void cargarContactos();
   }, [cargarContactos]);
+
+  useEffect(() => {
+    const pendiente = leerBusquedaPendiente();
+    if (!pendiente) return;
+    setDireccionCercana(pendiente.direccion);
+    setCargandoCercanos(true);
+    void (async () => {
+      const { data, error } = await supabase.rpc("buscar_talleres_cercanos", {
+        p_lat: pendiente.lat,
+        p_lng: pendiente.lng,
+        p_radio_km: 30,
+        p_tipo_vehiculo: pendiente.vehiculo || null,
+        p_servicio: pendiente.servicio || null,
+      });
+      setResultadosCercanos(!error && data ? (data as TallerVerificado[]) : []);
+      setCargandoCercanos(false);
+      limpiarBusquedaPendiente();
+    })();
+  }, []);
 
   const handleSearch = useCallback(async () => {
     const q = termino.trim();
@@ -375,6 +411,31 @@ export default function ClienteBuscarTalleres() {
           Encuentra talleres y almacenes de repuestos verificados con Sello de Confianza y contáctalos directo.
         </p>
       </div>
+
+      {direccionCercana && (
+        <div className="space-y-3 rounded-2xl border border-brand-500/20 bg-brand-500/5 p-5">
+          <div className="flex items-center gap-2">
+            <MapPin className="h-4 w-4 text-brand-600" />
+            <h2 className="text-sm font-bold text-foreground">Talleres cerca de "{direccionCercana}"</h2>
+          </div>
+          {cargandoCercanos ? (
+            <div className="flex items-center justify-center py-10">
+              <Loader2 className="h-6 w-6 animate-spin text-brand-600" />
+            </div>
+          ) : resultadosCercanos.length === 0 ? (
+            <p className="text-xs text-muted-foreground">
+              No encontramos talleres verificados cerca de esa dirección todavía. Seguimos sumando cobertura — probá
+              buscando por nombre más abajo.
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {resultadosCercanos.map((t) => (
+                <TallerCard key={t.id} taller={t} onContactar={setContactando} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="flex max-w-xl gap-2">
         <div className="relative flex-1">

@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ScrollToTop } from "./components/ScrollToTop";
 import { AuthProvider } from "./lib/AuthProvider";
 import { RequireAuth } from "./components/RequireAuth";
+import { RequireDocumento } from "./components/RequireDocumento";
 import LandingHub from "./pages/LandingHub";
 import LandingClientes from "./pages/LandingClientes";
 import LandingTalleres from "./pages/LandingTalleres";
@@ -60,7 +61,9 @@ export default function App() {
             path="/portal/cliente"
             element={
               <RequireAuth rol="Cliente" loginPath="/login/cliente">
-                <ClientePortalLayout />
+                <RequireDocumento>
+                  <ClientePortalLayout />
+                </RequireDocumento>
               </RequireAuth>
             }
           >
@@ -80,7 +83,9 @@ export default function App() {
             element={
               <RequireAuth rol="Taller" loginPath="/login/taller">
                 <RequireTallerAprobado>
-                  <TallerLayout />
+                  <RequireDocumento>
+                    <TallerLayout />
+                  </RequireDocumento>
                 </RequireTallerAprobado>
               </RequireAuth>
             }

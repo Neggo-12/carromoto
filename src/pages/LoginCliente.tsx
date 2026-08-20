@@ -6,6 +6,7 @@ import { TextField } from "@/components/TextField";
 import { PasswordField } from "@/components/PasswordField";
 import { Button } from "@/components/Button";
 import { useAuth } from "@/lib/AuthProvider";
+import { leerBusquedaPendiente } from "@/lib/geocoding";
 
 export default function LoginCliente() {
   const navigate = useNavigate();
@@ -30,7 +31,11 @@ export default function LoginCliente() {
   useEffect(() => {
     if (!intentoLogin) return;
     if (session && perfil) {
-      navigate("/portal/cliente");
+      // Si el visitante dejó una búsqueda por dirección a medias en la Home
+      // pública (buscó, pero no tenía cuenta), lo mandamos directo a que la
+      // vea resuelta en vez de al inicio del portal — ClienteBuscarTalleres
+      // es quien la consume y la borra.
+      navigate(leerBusquedaPendiente() ? "/portal/cliente/buscar-talleres" : "/portal/cliente");
     }
   }, [intentoLogin, session, perfil, navigate]);
 

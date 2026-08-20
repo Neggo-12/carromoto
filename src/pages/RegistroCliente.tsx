@@ -23,6 +23,7 @@ import { StepProgress } from "@/components/StepProgress";
 import { Button } from "@/components/Button";
 import { CIUDADES, OPCIONES_MOTORIZACION, type Motorizacion } from "@/lib/data";
 import { useAuth } from "@/lib/AuthProvider";
+import { leerBusquedaPendiente } from "@/lib/geocoding";
 
 type Vehiculo = "carro" | "moto" | "ambos";
 
@@ -239,7 +240,16 @@ export default function RegistroCliente() {
                   nada que llenar de una sola vez.
                 </p>
               )}
-              <Link to={requiereConfirmacion ? "/login/cliente" : "/portal/cliente"} className="mt-7 inline-block">
+              <Link
+                to={
+                  requiereConfirmacion
+                    ? "/login/cliente"
+                    : leerBusquedaPendiente()
+                      ? "/portal/cliente/buscar-talleres"
+                      : "/portal/cliente"
+                }
+                className="mt-7 inline-block"
+              >
                 <Button as="span" variant="brand" size="lg">
                   {requiereConfirmacion ? "Ir a iniciar sesión" : "Ir a mi portal"}
                 </Button>

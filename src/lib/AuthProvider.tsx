@@ -83,6 +83,12 @@ interface AuthContextValue {
   cerrarSesion: () => Promise<void>;
   registrarCliente: (datos: DatosRegistroCliente) => Promise<ResultadoRegistro>;
   registrarTaller: (datos: DatosRegistroTaller) => Promise<ResultadoRegistro>;
+  // Guarda el tipo/número de documento del usuario logueado (Cliente o
+  // Taller) en public.users — una sola vez. RequireDocumento.tsx lo llama
+  // cuando perfil.documentoTipo/documentoNumero todavía están vacíos, y
+  // como actualiza `perfil` directamente (sin refetch) el gate deja de
+  // pedirlo apenas se guarda, sin esperar a un refresh de página.
+  actualizarDocumento: (documentoTipo: string, documentoNumero: string) => Promise<ResultadoAuth>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -254,8 +260,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: null, requiereConfirmacion: !data.session };
   }
 
+  async function actualizarDocumento(documentoTipo: string, documentoNumero: string): Promise<ResultadoAuth> {
+    if (!supabaseConfigurado) return { error: "Supabase todavía no está configurado en este entorno." };
+    if (!session) return { error: "No hay sesión activa." };
+    const { error } = await supabase
+      .from("users")
+      .update({ documento_tipo: documentoTipo, documento_numero: documentoNumero })
+      .eq("id", session.user.id);
+    if (error) return { error: "No pudimos guardar tu documento. Intentá de nuevo." };
+    setPerfil((prev) => (prev ? { ...prev, documentoTipo, documentoNumero } : prev));
+    return { error: null };
+  }
+
   return (
-    <AuthContext.Provider value={{ cargando, session, perfil, iniciarSesion, cerrarSesion, registrarCliente, registrarTaller }}>
+    <AuthContext.Provider
+      value={{ cargando, session, perfil, iniciarSesion, cerrarSesion, registrarCliente, registrarTaller, actualizarDocumento }}
+    >
       {children}
     </AuthContext.Provider>
   );
