@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -60,9 +60,12 @@ export default function RegistroTaller() {
 
   const [tipoNegocio, setTipoNegocioState] = useState<TipoNegocio | null>(null);
   const [tipoVehiculo, setTipoVehiculoState] = useState<TipoVehiculo | null>(null);
-  const [carroMotorizacion, setCarroMotorizacion] = useState<Motorizacion | null>(null);
-  const [motoMotorizacion, setMotoMotorizacion] = useState<Motorizacion | null>(null);
-  const [especialistaElectricos, setEspecialistaElectricos] = useState<boolean | null>(null);
+  // Multi-select: un taller puede atender varias motorizaciones a la vez
+  // (ej. combustión Y eléctrico), no una sola — antes esto era un valor
+  // único y forzaba a elegir solo una opción, lo cual era confuso y además
+  // no reflejaba la realidad de la mayoría de talleres.
+  const [carroMotorizaciones, setCarroMotorizaciones] = useState<Motorizacion[]>([]);
+  const [motoMotorizaciones, setMotoMotorizaciones] = useState<Motorizacion[]>([]);
 
   const [servicios, setServicios] = useState<string[]>([]);
 
@@ -84,16 +87,28 @@ export default function RegistroTaller() {
     return [];
   }, [tipoNegocio, tipoVehiculo]);
 
-  const algunoElectrificado =
-    carroMotorizacion === "electrico" ||
-    carroMotorizacion === "hibrido" ||
-    motoMotorizacion === "electrico" ||
-    motoMotorizacion === "hibrido";
+  // Motorizaciones que de verdad aplican según el tipo de vehículo elegido
+  // (si solo atiende carro, lo de moto no cuenta aunque haya quedado en el
+  // estado de un paso anterior).
+  const motorizacionesAplicables = useMemo(() => {
+    const deCarro = tipoVehiculo === "carro" || tipoVehiculo === "ambos" ? carroMotorizaciones : [];
+    const deMoto = tipoVehiculo === "moto" || tipoVehiculo === "ambos" ? motoMotorizaciones : [];
+    return [...deCarro, ...deMoto];
+  }, [tipoVehiculo, carroMotorizaciones, motoMotorizaciones]);
 
-  // Si dejan de aplicar los eléctricos/híbridos, limpiamos la pregunta de especialista.
-  useEffect(() => {
-    if (!algunoElectrificado) setEspecialistaElectricos(null);
-  }, [algunoElectrificado]);
+  const algunoElectrificado = motorizacionesAplicables.some((m) => m === "electrico" || m === "hibrido");
+  // Especialista exclusivo = todo lo que marcó es eléctrico/híbrido, sin
+  // combustión — se calcula solo, ya no hace falta preguntarlo aparte (esa
+  // pregunta repetía lo que ya habían contestado arriba y confundía).
+  const especialistaElectricos = algunoElectrificado && !motorizacionesAplicables.includes("combustion");
+
+  function toggleCarroMotorizacion(v: Motorizacion) {
+    setCarroMotorizaciones((prev) => (prev.includes(v) ? prev.filter((m) => m !== v) : [...prev, v]));
+  }
+
+  function toggleMotoMotorizacion(v: Motorizacion) {
+    setMotoMotorizaciones((prev) => (prev.includes(v) ? prev.filter((m) => m !== v) : [...prev, v]));
+  }
 
   function handleCiudadChange(v: string) {
     setCiudad(v);
@@ -107,8 +122,8 @@ export default function RegistroTaller() {
 
   function selectTipoVehiculo(v: TipoVehiculo) {
     setTipoVehiculoState(v);
-    if (v !== "carro" && v !== "ambos") setCarroMotorizacion(null);
-    if (v !== "moto" && v !== "ambos") setMotoMotorizacion(null);
+    if (v !== "carro" && v !== "ambos") setCarroMotorizaciones([]);
+    if (v !== "moto" && v !== "ambos") setMotoMotorizaciones([]);
     setServicios([]);
   }
 
@@ -141,14 +156,11 @@ export default function RegistroTaller() {
     if (step === 2) {
       if (!tipoNegocio) return fail("Contanos si sos un taller o un almacén de repuestos.");
       if (!tipoVehiculo) return fail("Elegí si trabajás con carro, moto o ambos.");
-      if ((tipoVehiculo === "carro" || tipoVehiculo === "ambos") && carroMotorizacion === null) {
-        return fail(tipoNegocio === "almacen" ? "Contanos si vendés repuestos para carros eléctricos o híbridos." : "Contanos si atendés carros eléctricos o híbridos.");
+      if ((tipoVehiculo === "carro" || tipoVehiculo === "ambos") && carroMotorizaciones.length === 0) {
+        return fail(tipoNegocio === "almacen" ? "Elegí qué motorización de carros vendés en repuestos." : "Elegí qué motorización de carros atendés.");
       }
-      if ((tipoVehiculo === "moto" || tipoVehiculo === "ambos") && motoMotorizacion === null) {
-        return fail(tipoNegocio === "almacen" ? "Contanos si vendés repuestos para motos eléctricas o híbridas." : "Contanos si atendés motos eléctricas o híbridas.");
-      }
-      if (algunoElectrificado && especialistaElectricos === null) {
-        return fail("Contanos si sos especialista exclusivamente en eléctricos e híbridos.");
+      if ((tipoVehiculo === "moto" || tipoVehiculo === "ambos") && motoMotorizaciones.length === 0) {
+        return fail(tipoNegocio === "almacen" ? "Elegí qué motorización de motos vendés en repuestos." : "Elegí qué motorización de motos atendés.");
       }
       return true;
     }
@@ -178,8 +190,8 @@ export default function RegistroTaller() {
           barrio,
           direccion,
           tipo_vehiculo: tipoVehiculo,
-          carro_motorizacion: carroMotorizacion,
-          moto_motorizacion: motoMotorizacion,
+          carro_motorizacion: carroMotorizaciones,
+          moto_motorizacion: motoMotorizaciones,
           especialista_electricos: especialistaElectricos,
           servicios,
           horario,
@@ -301,18 +313,19 @@ export default function RegistroTaller() {
               <AnimatePresence>
                 {(tipoVehiculo === "carro" || tipoVehiculo === "ambos") && (
                   <motion.div key="carro-motorizacion" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mt-5 overflow-hidden">
-                    <p className="mb-2 text-xs font-bold text-foreground flex items-center gap-1.5">
+                    <p className="mb-0.5 text-xs font-bold text-foreground flex items-center gap-1.5">
                       <Zap className="h-3.5 w-3.5 text-signal-600" />
-                      {tipoNegocio === "almacen" ? "¿Vendés repuestos para carros eléctricos o híbridos?" : "¿Ofrecés servicios para carros eléctricos o híbridos?"}
+                      {tipoNegocio === "almacen" ? "¿Para qué motorización de carros vendés repuestos?" : "¿Qué motorización de carros atendés?"}
                     </p>
+                    <p className="mb-2 text-[11px] text-muted-foreground">Elegí todas las que apliquen.</p>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
                       {OPCIONES_MOTORIZACION.map((opt) => (
                         <SelectableCard
                           key={opt.value}
                           label={opt.label}
                           description={opt.description}
-                          selected={carroMotorizacion === opt.value}
-                          onClick={() => setCarroMotorizacion(opt.value)}
+                          selected={carroMotorizaciones.includes(opt.value)}
+                          onClick={() => toggleCarroMotorizacion(opt.value)}
                           accent="signal"
                           compact
                         />
@@ -322,18 +335,19 @@ export default function RegistroTaller() {
                 )}
                 {(tipoVehiculo === "moto" || tipoVehiculo === "ambos") && (
                   <motion.div key="moto-motorizacion" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mt-5 overflow-hidden">
-                    <p className="mb-2 text-xs font-bold text-foreground flex items-center gap-1.5">
+                    <p className="mb-0.5 text-xs font-bold text-foreground flex items-center gap-1.5">
                       <Zap className="h-3.5 w-3.5 text-signal-600" />
-                      {tipoNegocio === "almacen" ? "¿Vendés repuestos para motos eléctricas o híbridas?" : "¿Ofrecés servicios para motos eléctricas o híbridas?"}
+                      {tipoNegocio === "almacen" ? "¿Para qué motorización de motos vendés repuestos?" : "¿Qué motorización de motos atendés?"}
                     </p>
+                    <p className="mb-2 text-[11px] text-muted-foreground">Elegí todas las que apliquen.</p>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
                       {OPCIONES_MOTORIZACION.map((opt) => (
                         <SelectableCard
                           key={opt.value}
                           label={opt.label}
                           description={opt.description}
-                          selected={motoMotorizacion === opt.value}
-                          onClick={() => setMotoMotorizacion(opt.value)}
+                          selected={motoMotorizaciones.includes(opt.value)}
+                          onClick={() => toggleMotoMotorizacion(opt.value)}
                           accent="signal"
                           compact
                         />
@@ -343,30 +357,32 @@ export default function RegistroTaller() {
                 )}
               </AnimatePresence>
 
+              {/* Se calcula solo a partir de lo que marcaron arriba — ya no
+                  se vuelve a preguntar. Eléctrico/híbrido queda destacado
+                  con su propia insignia en vez de una pregunta aparte. */}
               <AnimatePresence>
                 {algunoElectrificado && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mt-5 overflow-hidden">
-                    <p className="mb-2 text-xs font-bold text-foreground flex items-center gap-1.5">
-                      <Sparkles className="h-3.5 w-3.5 text-signal-600" />
-                      ¿Sos especialista exclusivamente en eléctricos e híbridos?
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <SelectableCard
-                        label="Sí, solo eléctricos e híbridos"
-                        description="Nos especializamos únicamente en vehículos electrificados."
-                        selected={especialistaElectricos === true}
-                        onClick={() => setEspecialistaElectricos(true)}
-                        accent="signal"
-                        compact
-                      />
-                      <SelectableCard
-                        label="No, también convencionales"
-                        description="Atendemos electrificados y a combustión."
-                        selected={especialistaElectricos === false}
-                        onClick={() => setEspecialistaElectricos(false)}
-                        accent="signal"
-                        compact
-                      />
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mt-5 overflow-hidden"
+                  >
+                    <div className="flex items-start gap-2.5 rounded-xl border border-signal-500/25 bg-signal-500/[0.06] px-4 py-3">
+                      <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-signal-600" />
+                      <p className="text-xs text-foreground">
+                        {especialistaElectricos ? (
+                          <>
+                            <span className="font-bold">Te vamos a destacar como especialista en eléctricos e híbridos.</span>{" "}
+                            Vas a aparecer resaltado para los clientes que busquen justo eso.
+                          </>
+                        ) : (
+                          <>
+                            <span className="font-bold">Vas a aparecer también entre los talleres que atienden eléctricos e híbridos,</span>{" "}
+                            además de los convencionales.
+                          </>
+                        )}
+                      </p>
                     </div>
                   </motion.div>
                 )}

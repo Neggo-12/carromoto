@@ -9,6 +9,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase, supabaseConfigurado } from "@/lib/supabaseClient";
+import type { EstadoAprobacion } from "@/lib/estados";
 
 export type RolUsuario = "Admin" | "Taller" | "Cliente";
 
@@ -31,6 +32,12 @@ export interface Perfil {
   // consultar/actualizar "su" fila en organizations, comercio_contactos,
   // etc. sin repetir el join a memberships en cada pantalla.
   organizationId: string | null;
+  // También solo para rol='Taller' — el status de esa organization
+  // ('pendiente' | 'aprobado' | 'rechazado'). RequireTallerAprobado usa esto
+  // para bloquear TODO el panel de taller hasta que un admin apruebe: un
+  // taller registrado no debe poder "entrar" (ver CRM, publicar ofertas,
+  // editar perfil) mientras esté pendiente, aunque ya tenga sesión activa.
+  organizationStatus: EstadoAprobacion | null;
 }
 
 export interface DatosRegistroCliente {
@@ -136,15 +143,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!activo) return;
       if (!error && data) {
         let organizationId: string | null = null;
+        let organizationStatus: EstadoAprobacion | null = null;
         if (data.rol === "Taller") {
           const { data: membership } = await supabase
             .from("memberships")
-            .select("organization_id")
+            .select("organization_id, organizations(status)")
             .eq("user_id", userId)
             .eq("is_active", true)
             .maybeSingle();
           if (!activo) return;
           organizationId = membership?.organization_id ?? null;
+          const org = membership?.organizations as { status?: EstadoAprobacion } | { status?: EstadoAprobacion }[] | null;
+          organizationStatus = (Array.isArray(org) ? org[0]?.status : org?.status) ?? null;
         }
         setPerfil({
           id: data.id,
@@ -159,6 +169,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           carroMotorizacion: data.carro_motorizacion ?? null,
           motoMotorizacion: data.moto_motorizacion ?? null,
           organizationId,
+          organizationStatus,
         });
       } else {
         setPerfil(null);

@@ -35,9 +35,10 @@ interface FormData {
   celular: string;
   tipoNegocio: TipoNegocio;
   tipoVehiculo: TipoVehiculo;
-  carroMotorizacion: Motorizacion | null;
-  motoMotorizacion: Motorizacion | null;
-  especialistaElectricos: boolean;
+  // Multi-select: ver RegistroTaller.tsx — un taller puede atender varias
+  // motorizaciones a la vez, no una sola.
+  carroMotorizaciones: Motorizacion[];
+  motoMotorizaciones: Motorizacion[];
   servicios: string[];
   horario: WeekSchedule;
   descripcionNegocio: string | null;
@@ -52,13 +53,23 @@ const FORM_VACIO: FormData = {
   celular: "",
   tipoNegocio: "taller",
   tipoVehiculo: "carro",
-  carroMotorizacion: null,
-  motoMotorizacion: null,
-  especialistaElectricos: false,
+  carroMotorizaciones: [],
+  motoMotorizaciones: [],
   servicios: [],
   horario: defaultSchedule(),
   descripcionNegocio: null,
 };
+
+const MOTORIZACIONES_VALIDAS: Motorizacion[] = ["combustion", "electrico", "hibrido"];
+
+// Perfiles creados antes de este cambio guardaron carro_motorizacion /
+// moto_motorizacion como un string único (no un array) — esto normaliza
+// ambas formas para que sigan cargando bien en el formulario.
+function normalizarMotorizaciones(v: unknown): Motorizacion[] {
+  if (Array.isArray(v)) return v.filter((m): m is Motorizacion => MOTORIZACIONES_VALIDAS.includes(m as Motorizacion));
+  if (typeof v === "string" && MOTORIZACIONES_VALIDAS.includes(v as Motorizacion)) return [v as Motorizacion];
+  return [];
+}
 
 /**
  * Edición de perfil — reusa los mismos componentes del registro
@@ -103,9 +114,8 @@ export default function TallerPerfil() {
           celular: perfil.celular ?? "",
           tipoNegocio: org.type as TipoNegocio,
           tipoVehiculo: (meta.tipo_vehiculo as TipoVehiculo) ?? "carro",
-          carroMotorizacion: (meta.carro_motorizacion as Motorizacion) ?? null,
-          motoMotorizacion: (meta.moto_motorizacion as Motorizacion) ?? null,
-          especialistaElectricos: Boolean(meta.especialista_electricos),
+          carroMotorizaciones: normalizarMotorizaciones(meta.carro_motorizacion),
+          motoMotorizaciones: normalizarMotorizaciones(meta.moto_motorizacion),
           servicios: (meta.servicios as string[]) ?? [],
           horario: (meta.horario as WeekSchedule) ?? defaultSchedule(),
           descripcionNegocio: org.descripcion_negocio,
@@ -129,18 +139,18 @@ export default function TallerPerfil() {
     return [...listaCarro, ...listaMoto];
   }, [data.tipoNegocio, data.tipoVehiculo]);
 
-  const algunoElectrificado =
-    data.carroMotorizacion === "electrico" ||
-    data.carroMotorizacion === "hibrido" ||
-    data.motoMotorizacion === "electrico" ||
-    data.motoMotorizacion === "hibrido";
+  // Solo cuentan las motorizaciones del tipo de vehículo que de verdad
+  // atiende ahora mismo (si cambió a "solo carro", lo que quedó guardado de
+  // moto no debe influir).
+  const motorizacionesAplicables = useMemo(() => {
+    const deCarro = data.tipoVehiculo === "carro" || data.tipoVehiculo === "ambos" ? data.carroMotorizaciones : [];
+    const deMoto = data.tipoVehiculo === "moto" || data.tipoVehiculo === "ambos" ? data.motoMotorizaciones : [];
+    return [...deCarro, ...deMoto];
+  }, [data.tipoVehiculo, data.carroMotorizaciones, data.motoMotorizaciones]);
 
-  useEffect(() => {
-    if (!algunoElectrificado && data.especialistaElectricos) {
-      setData((d) => ({ ...d, especialistaElectricos: false }));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [algunoElectrificado]);
+  const algunoElectrificado = motorizacionesAplicables.some((m) => m === "electrico" || m === "hibrido");
+  // Se calcula solo — ver RegistroTaller.tsx.
+  const especialistaElectricos = algunoElectrificado && !motorizacionesAplicables.includes("combustion");
 
   function patch(partial: Partial<FormData>) {
     setGuardado(false);
@@ -154,10 +164,26 @@ export default function TallerPerfil() {
   function selectTipoVehiculo(v: TipoVehiculo) {
     patch({
       tipoVehiculo: v,
-      carroMotorizacion: v === "carro" || v === "ambos" ? data.carroMotorizacion : null,
-      motoMotorizacion: v === "moto" || v === "ambos" ? data.motoMotorizacion : null,
+      carroMotorizaciones: v === "carro" || v === "ambos" ? data.carroMotorizaciones : [],
+      motoMotorizaciones: v === "moto" || v === "ambos" ? data.motoMotorizaciones : [],
       servicios: [],
     });
+  }
+
+  function toggleCarroMotorizacion(v: Motorizacion) {
+    setGuardado(false);
+    setData((d) => ({
+      ...d,
+      carroMotorizaciones: d.carroMotorizaciones.includes(v) ? d.carroMotorizaciones.filter((m) => m !== v) : [...d.carroMotorizaciones, v],
+    }));
+  }
+
+  function toggleMotoMotorizacion(v: Motorizacion) {
+    setGuardado(false);
+    setData((d) => ({
+      ...d,
+      motoMotorizaciones: d.motoMotorizaciones.includes(v) ? d.motoMotorizaciones.filter((m) => m !== v) : [...d.motoMotorizaciones, v],
+    }));
   }
 
   function toggleServicio(value: string) {
@@ -180,9 +206,9 @@ export default function TallerPerfil() {
       barrio: data.barrio,
       direccion: data.direccion,
       tipo_vehiculo: data.tipoVehiculo,
-      carro_motorizacion: data.carroMotorizacion,
-      moto_motorizacion: data.motoMotorizacion,
-      especialista_electricos: data.especialistaElectricos,
+      carro_motorizacion: data.carroMotorizaciones,
+      moto_motorizacion: data.motoMotorizaciones,
+      especialista_electricos: especialistaElectricos,
       servicios: data.servicios,
       horario: data.horario,
     };
@@ -314,39 +340,49 @@ export default function TallerPerfil() {
         <AnimatePresence>
           {(data.tipoVehiculo === "carro" || data.tipoVehiculo === "ambos") && (
             <motion.div key="carro-motorizacion" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-              <p className="mb-2 flex items-center gap-1.5 text-xs font-bold text-foreground">
+              <p className="mb-0.5 flex items-center gap-1.5 text-xs font-bold text-foreground">
                 <Zap className="h-3.5 w-3.5 text-signal-600" />
-                {data.tipoNegocio === "almacen" ? "¿Vendés repuestos para carros eléctricos o híbridos?" : "¿Ofrecés servicios para carros eléctricos o híbridos?"}
+                {data.tipoNegocio === "almacen" ? "¿Para qué motorización de carros vendés repuestos?" : "¿Qué motorización de carros atendés?"}
               </p>
+              <p className="mb-2 text-[11px] text-muted-foreground">Elegí todas las que apliquen.</p>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
                 {OPCIONES_MOTORIZACION.map((opt) => (
-                  <SelectableCard key={opt.value} label={opt.label} description={opt.description} selected={data.carroMotorizacion === opt.value} onClick={() => patch({ carroMotorizacion: opt.value as Motorizacion })} accent="signal" compact />
+                  <SelectableCard key={opt.value} label={opt.label} description={opt.description} selected={data.carroMotorizaciones.includes(opt.value)} onClick={() => toggleCarroMotorizacion(opt.value)} accent="signal" compact />
                 ))}
               </div>
             </motion.div>
           )}
           {(data.tipoVehiculo === "moto" || data.tipoVehiculo === "ambos") && (
             <motion.div key="moto-motorizacion" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-              <p className="mb-2 flex items-center gap-1.5 text-xs font-bold text-foreground">
+              <p className="mb-0.5 flex items-center gap-1.5 text-xs font-bold text-foreground">
                 <Zap className="h-3.5 w-3.5 text-signal-600" />
-                {data.tipoNegocio === "almacen" ? "¿Vendés repuestos para motos eléctricas o híbridas?" : "¿Ofrecés servicios para motos eléctricas o híbridas?"}
+                {data.tipoNegocio === "almacen" ? "¿Para qué motorización de motos vendés repuestos?" : "¿Qué motorización de motos atendés?"}
               </p>
+              <p className="mb-2 text-[11px] text-muted-foreground">Elegí todas las que apliquen.</p>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
                 {OPCIONES_MOTORIZACION.map((opt) => (
-                  <SelectableCard key={opt.value} label={opt.label} description={opt.description} selected={data.motoMotorizacion === opt.value} onClick={() => patch({ motoMotorizacion: opt.value as Motorizacion })} accent="signal" compact />
+                  <SelectableCard key={opt.value} label={opt.label} description={opt.description} selected={data.motoMotorizaciones.includes(opt.value)} onClick={() => toggleMotoMotorizacion(opt.value)} accent="signal" compact />
                 ))}
               </div>
             </motion.div>
           )}
           {algunoElectrificado && (
             <motion.div key="especialista" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-              <p className="mb-2 flex items-center gap-1.5 text-xs font-bold text-foreground">
-                <Sparkles className="h-3.5 w-3.5 text-signal-600" />
-                ¿Sos especialista exclusivamente en eléctricos e híbridos?
-              </p>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <SelectableCard label="Sí, solo eléctricos e híbridos" description="Nos especializamos únicamente en vehículos electrificados." selected={data.especialistaElectricos === true} onClick={() => patch({ especialistaElectricos: true })} accent="signal" compact />
-                <SelectableCard label="No, también convencionales" description="Atendemos electrificados y a combustión." selected={data.especialistaElectricos === false} onClick={() => patch({ especialistaElectricos: false })} accent="signal" compact />
+              <div className="flex items-start gap-2.5 rounded-xl border border-signal-500/25 bg-signal-500/[0.06] px-4 py-3">
+                <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-signal-600" />
+                <p className="text-xs text-foreground">
+                  {especialistaElectricos ? (
+                    <>
+                      <span className="font-bold">Te destacamos como especialista en eléctricos e híbridos.</span>{" "}
+                      Aparecés resaltado para los clientes que busquen justo eso.
+                    </>
+                  ) : (
+                    <>
+                      <span className="font-bold">Aparecés también entre los talleres que atienden eléctricos e híbridos,</span>{" "}
+                      además de los convencionales.
+                    </>
+                  )}
+                </p>
               </div>
             </motion.div>
           )}

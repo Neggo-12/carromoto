@@ -24,6 +24,7 @@ import ClienteOfertas from "./pages/cliente/ClienteOfertas";
 import ClienteBuscarTalleres from "./pages/cliente/ClienteBuscarTalleres";
 import ClientePuntos from "./pages/cliente/ClientePuntos";
 import { TallerLayout } from "./components/taller/TallerLayout";
+import { RequireTallerAprobado } from "./components/taller/RequireTallerAprobado";
 import TallerResumen from "./pages/taller/TallerResumen";
 import TallerPerfil from "./pages/taller/TallerPerfil";
 import TallerSolicitudes from "./pages/taller/TallerSolicitudes";
@@ -69,13 +70,18 @@ export default function App() {
             <Route path="puntos" element={<ClientePuntos />} />
           </Route>
 
-          {/* Panel de Taller — perfil, CRM, ofertas y score. Mismo criterio
-              de protección que el Portal de Cliente. */}
+          {/* Panel de Taller — perfil, CRM, ofertas y score. Además de sesión
+              + rol correcto (RequireAuth), un taller solo entra al panel de
+              verdad si organizations.status ya es 'aprobado' —
+              RequireTallerAprobado bloquea TODO lo de acá abajo mientras
+              esté 'pendiente' o 'rechazado', sin excepciones. */}
           <Route
             path="/portal/taller"
             element={
               <RequireAuth rol="Taller" loginPath="/login/taller">
-                <TallerLayout />
+                <RequireTallerAprobado>
+                  <TallerLayout />
+                </RequireTallerAprobado>
               </RequireAuth>
             }
           >
