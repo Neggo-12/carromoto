@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Mail, Phone, Store, MapPin, Zap, Sparkles, CarFront, Bike, Car, Wrench, Package, Check, Lock, FileText, AlertCircle } from "lucide-react";
+import { Mail, Phone, Store, MapPin, Zap, Sparkles, CarFront, Bike, Car, Wrench, Package, Check, Lock, FileText, AlertCircle, Loader2 } from "lucide-react";
 import { TextField } from "@/components/TextField";
 import { TextareaField } from "@/components/Textarea";
 import { SearchableSelect } from "@/components/SearchableSelect";
 import { SelectableCard } from "@/components/SelectableCard";
-import { ScheduleEditor } from "@/components/ScheduleEditor";
+import { ScheduleEditor, defaultSchedule, type WeekSchedule } from "@/components/ScheduleEditor";
 import {
   CIUDADES,
   BARRIOS_POR_CIUDAD,
@@ -16,26 +16,108 @@ import {
   OPCIONES_MOTORIZACION,
   type Motorizacion,
 } from "@/lib/data";
-import {
-  MI_TALLER_MOCK,
-  DESCRIPCION_NEGOCIO_MIN,
-  DESCRIPCION_NEGOCIO_MAX,
-  type TallerPerfil as TallerPerfilData,
-} from "@/lib/tallerData";
+import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/lib/AuthProvider";
 import { cn } from "@/lib/utils";
+
+export const DESCRIPCION_NEGOCIO_MIN = 40;
+export const DESCRIPCION_NEGOCIO_MAX = 220;
 
 type TipoVehiculo = "carro" | "moto" | "ambos";
 type TipoNegocio = "taller" | "almacen";
 
+interface FormData {
+  nombreNegocio: string;
+  ciudad: string;
+  barrio: string;
+  direccion: string;
+  encargadoNombre: string;
+  celular: string;
+  tipoNegocio: TipoNegocio;
+  tipoVehiculo: TipoVehiculo;
+  carroMotorizacion: Motorizacion | null;
+  motoMotorizacion: Motorizacion | null;
+  especialistaElectricos: boolean;
+  servicios: string[];
+  horario: WeekSchedule;
+  descripcionNegocio: string | null;
+}
+
+const FORM_VACIO: FormData = {
+  nombreNegocio: "",
+  ciudad: "",
+  barrio: "",
+  direccion: "",
+  encargadoNombre: "",
+  celular: "",
+  tipoNegocio: "taller",
+  tipoVehiculo: "carro",
+  carroMotorizacion: null,
+  motoMotorizacion: null,
+  especialistaElectricos: false,
+  servicios: [],
+  horario: defaultSchedule(),
+  descripcionNegocio: null,
+};
+
 /**
- * Edición de perfil — reusa los mismos componentes del registro (paso 2 a 4
- * de RegistroTaller.tsx) pero en una sola página, ya con los datos cargados.
- * "Guardar cambios" solo actualiza el estado local por ahora — cuando haya
- * Supabase conectado, esto hace un update real.
+ * Edición de perfil — reusa los mismos componentes del registro
+ * (RegistroTaller.tsx) pero ya con los datos reales cargados desde
+ * organizations (id = perfil.organizationId). "Guardar cambios" hace un
+ * update real: organizations (name, ciudad, type, metadata,
+ * descripcion_negocio) + users (nombre, celular) del encargado logueado.
+ * El correo de acceso no se edita acá — cambiar el email de login requiere
+ * su propio flujo de confirmación en Supabase Auth, todavía no conectado.
  */
 export default function TallerPerfil() {
-  const [data, setData] = useState<TallerPerfilData>(MI_TALLER_MOCK);
+  const { perfil } = useAuth();
+  const [cargando, setCargando] = useState(true);
+  const [estado, setEstado] = useState<"pendiente" | "aprobado" | "rechazado">("pendiente");
+  const [data, setData] = useState<FormData>(FORM_VACIO);
+  const [guardando, setGuardando] = useState(false);
   const [guardado, setGuardado] = useState(false);
+
+  useEffect(() => {
+    let activo = true;
+    async function cargar() {
+      if (!perfil?.organizationId) {
+        setCargando(false);
+        return;
+      }
+      setCargando(true);
+      const { data: org, error } = await supabase
+        .from("organizations")
+        .select("name, type, ciudad, status, metadata, descripcion_negocio")
+        .eq("id", perfil.organizationId)
+        .maybeSingle();
+      if (!activo) return;
+      if (!error && org) {
+        const meta = (org.metadata ?? {}) as Record<string, unknown>;
+        setEstado(org.status);
+        setData({
+          nombreNegocio: org.name ?? "",
+          ciudad: org.ciudad ?? "",
+          barrio: (meta.barrio as string) ?? "",
+          direccion: (meta.direccion as string) ?? "",
+          encargadoNombre: perfil.nombre ?? "",
+          celular: perfil.celular ?? "",
+          tipoNegocio: org.type as TipoNegocio,
+          tipoVehiculo: (meta.tipo_vehiculo as TipoVehiculo) ?? "carro",
+          carroMotorizacion: (meta.carro_motorizacion as Motorizacion) ?? null,
+          motoMotorizacion: (meta.moto_motorizacion as Motorizacion) ?? null,
+          especialistaElectricos: Boolean(meta.especialista_electricos),
+          servicios: (meta.servicios as string[]) ?? [],
+          horario: (meta.horario as WeekSchedule) ?? defaultSchedule(),
+          descripcionNegocio: org.descripcion_negocio,
+        });
+      }
+      setCargando(false);
+    }
+    cargar();
+    return () => {
+      activo = false;
+    };
+  }, [perfil?.organizationId, perfil?.nombre, perfil?.celular]);
 
   const barriosDisponibles = useMemo(() => BARRIOS_POR_CIUDAD[data.ciudad] ?? [], [data.ciudad]);
 
@@ -60,7 +142,7 @@ export default function TallerPerfil() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [algunoElectrificado]);
 
-  function patch(partial: Partial<TallerPerfilData>) {
+  function patch(partial: Partial<FormData>) {
     setGuardado(false);
     setData((d) => ({ ...d, ...partial }));
   }
@@ -86,15 +168,50 @@ export default function TallerPerfil() {
     }));
   }
 
-  const descripcionRequerida = data.estado === "aprobado";
+  const descripcionRequerida = estado === "aprobado";
   const descripcionLen = data.descripcionNegocio?.trim().length ?? 0;
   const descripcionValida = !descripcionRequerida || descripcionLen >= DESCRIPCION_NEGOCIO_MIN;
-  const canGuardar = descripcionValida;
+  const canGuardar = descripcionValida && !guardando;
 
-  function handleGuardar() {
-    if (!canGuardar) return;
-    setGuardado(true);
-    setTimeout(() => setGuardado(false), 2500);
+  async function handleGuardar() {
+    if (!canGuardar || !perfil?.organizationId) return;
+    setGuardando(true);
+    const metadata = {
+      barrio: data.barrio,
+      direccion: data.direccion,
+      tipo_vehiculo: data.tipoVehiculo,
+      carro_motorizacion: data.carroMotorizacion,
+      moto_motorizacion: data.motoMotorizacion,
+      especialista_electricos: data.especialistaElectricos,
+      servicios: data.servicios,
+      horario: data.horario,
+    };
+    const [{ error: orgError }, { error: userError }] = await Promise.all([
+      supabase
+        .from("organizations")
+        .update({
+          name: data.nombreNegocio,
+          type: data.tipoNegocio,
+          ciudad: data.ciudad,
+          metadata,
+          descripcion_negocio: data.descripcionNegocio,
+        })
+        .eq("id", perfil.organizationId),
+      supabase.from("users").update({ nombre: data.encargadoNombre, celular: data.celular }).eq("id", perfil.id),
+    ]);
+    setGuardando(false);
+    if (!orgError && !userError) {
+      setGuardado(true);
+      setTimeout(() => setGuardado(false), 2500);
+    }
+  }
+
+  if (cargando) {
+    return (
+      <div className="flex items-center justify-center gap-2 py-24 text-sm text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" /> Cargando tu perfil...
+      </div>
+    );
   }
 
   return (
@@ -109,7 +226,16 @@ export default function TallerPerfil() {
         <h2 className="text-sm font-black text-foreground">Datos del negocio</h2>
         <TextField label="Nombre del negocio" icon={Store} value={data.nombreNegocio} onChange={(v) => patch({ nombreNegocio: v })} accent="signal" required />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <TextField label="Correo electrónico" type="email" icon={Mail} value={data.correo} onChange={(v) => patch({ correo: v })} accent="signal" required />
+          <TextField
+            label="Correo de acceso"
+            type="email"
+            icon={Mail}
+            value={perfil?.correo ?? ""}
+            onChange={() => {}}
+            accent="signal"
+            disabled
+            helpText="Para cambiar tu correo de acceso, escribinos — todavía no se puede hacer desde acá."
+          />
           <TextField label="Celular (WhatsApp)" icon={Phone} prefix="+57" value={data.celular} onChange={(v) => patch({ celular: v })} accent="signal" required />
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -117,10 +243,7 @@ export default function TallerPerfil() {
           <SearchableSelect label="Barrio" value={data.barrio} onChange={(v) => patch({ barrio: v })} options={barriosDisponibles} accent="signal" creatable required />
         </div>
         <TextField label="Dirección" icon={MapPin} value={data.direccion} onChange={(v) => patch({ direccion: v })} accent="signal" required />
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <TextField label="Nombre del encargado" value={data.encargado.nombre} onChange={(v) => patch({ encargado: { ...data.encargado, nombre: v } })} accent="signal" required />
-          <TextField label="Rol del encargado" value={data.encargado.rol} onChange={(v) => patch({ encargado: { ...data.encargado, rol: v } })} placeholder="Propietario, Administrador…" accent="signal" required />
-        </div>
+        <TextField label="Nombre del encargado" value={data.encargadoNombre} onChange={(v) => patch({ encargadoNombre: v })} accent="signal" required />
       </div>
 
       {/* Descripción del negocio — se habilita recién cuando el admin aprueba el taller */}
@@ -267,9 +390,10 @@ export default function TallerPerfil() {
               : "cursor-not-allowed bg-black/5 text-muted-foreground"
           )}
         >
+          {guardando && <Loader2 className="h-4 w-4 animate-spin" />}
           Guardar cambios
         </button>
-        {!canGuardar && (
+        {!descripcionValida && (
           <span className="text-[11px] font-semibold text-red-600">Completá la descripción de tu negocio para poder guardar.</span>
         )}
         <AnimatePresence>

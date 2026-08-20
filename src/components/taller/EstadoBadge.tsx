@@ -1,5 +1,5 @@
 import { Check, Clock, X } from "lucide-react";
-import type { EstadoAprobacion } from "@/lib/adminData";
+import type { EstadoAprobacion } from "@/lib/estados";
 import { cn } from "@/lib/utils";
 
 const CONFIG: Record<EstadoAprobacion, { label: string; icon: typeof Check; className: string }> = {

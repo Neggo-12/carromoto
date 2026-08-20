@@ -1,26 +1,32 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Mail, ArrowRight, UserCircle } from "lucide-react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Mail, ArrowRight, UserCircle, AlertCircle } from "lucide-react";
 import { AuthLayout } from "@/components/AuthLayout";
 import { TextField } from "@/components/TextField";
 import { PasswordField } from "@/components/PasswordField";
 import { Button } from "@/components/Button";
+import { useAuth } from "@/lib/AuthProvider";
 
 export default function LoginCliente() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { iniciarSesion } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [recordarme, setRecordarme] = useState(true);
   const [enviando, setEnviando] = useState(false);
+  const [error, setError] = useState("");
 
-  function handleSubmit(e: React.FormEvent) {
+  const avisoRolIncorrecto = (location.state as { motivo?: string } | null)?.motivo === "rol_incorrecto";
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setError("");
     setEnviando(true);
-    // Sin backend todavía — dejamos el flujo listo para conectar auth real.
-    setTimeout(() => {
-      setEnviando(false);
-      navigate("/portal/cliente");
-    }, 900);
+    const { error: err } = await iniciarSesion(email, password);
+    setEnviando(false);
+    if (err) return setError(err);
+    navigate("/portal/cliente");
   }
 
   return (
@@ -40,6 +46,13 @@ export default function LoginCliente() {
 
         <h2 className="text-2xl font-black tracking-tight text-foreground">Iniciá sesión</h2>
         <p className="mt-1.5 text-sm text-muted-foreground">Accedé a tu cuenta de cliente.</p>
+
+        {avisoRolIncorrecto && (
+          <div className="mt-4 flex gap-2 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+            <p className="text-xs text-amber-800">Esa cuenta no es de cliente — si tenés un taller, entrá por acá abajo.</p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="mt-7 space-y-4">
           <TextField
@@ -76,7 +89,9 @@ export default function LoginCliente() {
             </Link>
           </div>
 
-          <Button as="button" type="submit" variant="brand" size="lg" icon={ArrowRight} className="w-full">
+          {error && <p className="text-xs font-semibold text-red-600">{error}</p>}
+
+          <Button as="button" type="submit" variant="brand" size="lg" icon={ArrowRight} className="w-full" disabled={enviando}>
             {enviando ? "Entrando…" : "Iniciar sesión"}
           </Button>
         </form>

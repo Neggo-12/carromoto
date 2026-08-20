@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Search,
   Store,
@@ -19,17 +19,48 @@ import {
 import { Modal } from "@/components/Modal";
 import { TextField } from "@/components/TextField";
 import { TextareaField } from "@/components/Textarea";
-import {
-  buscarTalleresVerificados,
-  generarCodigoVerificacion,
-  CATEGORIA_LABELS,
-  type TallerVerificado,
-  type ContactoTaller,
-} from "@/lib/clienteData";
+import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/lib/AuthProvider";
 import { cn } from "@/lib/utils";
+
+// Fila real que devuelve buscar_comercios_verificados() — ver
+// supabase/migrations/0007_buscar_talleres_datos_reales.sql. Ya no hay data
+// de ejemplo acá: esto lee directo del taller que un admin haya aprobado y
+// sellado de verdad.
+interface TallerVerificado {
+  id: string;
+  name: string;
+  ciudad: string | null;
+  tipo_negocio: "taller" | "almacen";
+  tipo_vehiculo: "carro" | "moto" | "ambos" | null;
+  especialista_electricos: boolean;
+  descripcion_negocio: string | null;
+  afiliado_desde: string;
+  codigo_publico: string;
+}
+
+interface ContactoTaller {
+  id: string;
+  comercio_id: string;
+  descripcion: string;
+  telefono: string;
+  status: string;
+  codigo_verificacion: string;
+  created_at: string;
+  // nombre del taller — no viene en comercio_contactos, se guarda aparte al
+  // enviar para no tener que hacer un join solo para mostrarlo en la lista.
+  tallerNombre?: string;
+}
 
 function formatFecha(iso: string): string {
   return new Date(iso).toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function tipoVehiculoLabel(t: TallerVerificado["tipo_vehiculo"]) {
+  if (t === "carro") return "Carro";
+  if (t === "moto") return "Moto";
+  if (t === "ambos") return "Carro y moto";
+  return null;
 }
 
 // ───── Tarjeta de resultado ─────
@@ -49,28 +80,33 @@ function TallerCard({ taller, onContactar }: { taller: TallerVerificado; onConta
             className="text-[10px] font-mono text-muted-foreground/60"
             title="Código único — confírmalo con el taller para verificar su identidad"
           >
-            {taller.codigoPublico}
+            {taller.codigo_publico}
           </span>
         </div>
       </div>
 
-      <h3 className="text-sm font-bold text-foreground">{taller.nombre}</h3>
-      {taller.descripcionNegocio && (
-        <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">{taller.descripcionNegocio}</p>
+      <h3 className="text-sm font-bold text-foreground">{taller.name}</h3>
+      {taller.descripcion_negocio && (
+        <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">{taller.descripcion_negocio}</p>
       )}
 
       <div className="mt-1 space-y-1">
-        <p className="text-xs text-muted-foreground">{taller.categorias.map((c) => CATEGORIA_LABELS[c]).join(" · ")}</p>
-        <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <MapPin className="h-3 w-3" /> {taller.ciudad}
+        <p className="text-xs text-muted-foreground">
+          {taller.tipo_negocio === "almacen" ? "Repuestos" : "Taller"}
+          {tipoVehiculoLabel(taller.tipo_vehiculo) ? ` · ${tipoVehiculoLabel(taller.tipo_vehiculo)}` : ""}
         </p>
-        {taller.especialistaElectricos && (
+        {taller.ciudad && (
+          <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <MapPin className="h-3 w-3" /> {taller.ciudad}
+          </p>
+        )}
+        {taller.especialista_electricos && (
           <p className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700">
             <Zap className="h-3 w-3" /> Especialista en eléctricos e híbridos
           </p>
         )}
         <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground/70">
-          <Calendar className="h-3 w-3" /> Afiliado desde {formatFecha(taller.afiliadoDesde)}
+          <Calendar className="h-3 w-3" /> Afiliado desde {formatFecha(taller.afiliado_desde)}
         </p>
       </div>
 
@@ -94,13 +130,15 @@ function ContactarDialog({
 }: {
   taller: TallerVerificado | null;
   onClose: () => void;
-  onSuccess: (contacto: ContactoTaller) => void;
+  onSuccess: () => void;
 }) {
+  const { perfil } = useAuth();
   const [descripcion, setDescripcion] = useState("");
   const [telefono, setTelefono] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [estado, setEstado] = useState<"idle" | "loading" | "done">("idle");
   const [codigo, setCodigo] = useState<string | null>(null);
+  const [error, setError] = useState("");
 
   const canSubmit = descripcion.trim() !== "" && telefono.trim() !== "" && estado === "idle";
 
@@ -110,37 +148,43 @@ function ContactarDialog({
     setWhatsapp("");
     setEstado("idle");
     setCodigo(null);
+    setError("");
     onClose();
   }, [onClose]);
 
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback(async () => {
     if (!canSubmit || !taller) return;
     setEstado("loading");
-    setTimeout(() => {
-      const id = `ct-${Date.now().toString(36)}`;
-      const codigoGenerado = generarCodigoVerificacion(id);
-      setCodigo(codigoGenerado);
-      setEstado("done");
-      onSuccess({
-        id,
-        tallerId: taller.id,
-        tallerNombre: taller.nombre,
-        descripcion: descripcion.trim(),
-        nombre: "Tú",
-        telefono: telefono.trim(),
-        whatsapp: whatsapp.trim() || null,
-        status: "pendiente",
-        codigoVerificacion: codigoGenerado,
-        createdAt: new Date().toISOString(),
-      });
-    }, 700);
-  }, [canSubmit, taller, descripcion, telefono, whatsapp, onSuccess]);
+    setError("");
+    // registrar_contacto_comercio genera el código de verificación del lado
+    // del servidor (security definer) — no se inventa nada en el navegador.
+    const { data, error: err } = await supabase.rpc("registrar_contacto_comercio", {
+      p_comercio_id: taller.id,
+      p_descripcion: descripcion.trim(),
+      p_nombre: perfil?.nombre ?? "Cliente",
+      p_telefono: telefono.trim(),
+      p_whatsapp: whatsapp.trim() || null,
+    });
+    if (err || !data) {
+      setEstado("idle");
+      setError("No pudimos enviar tu solicitud. Intentá de nuevo.");
+      return;
+    }
+    const { data: fila } = await supabase
+      .from("comercio_contactos")
+      .select("codigo_verificacion")
+      .eq("id", data)
+      .maybeSingle();
+    setCodigo(fila?.codigo_verificacion ?? null);
+    setEstado("done");
+    onSuccess();
+  }, [canSubmit, taller, descripcion, telefono, whatsapp, perfil, onSuccess]);
 
   return (
     <Modal
       open={taller !== null}
       onClose={resetAndClose}
-      title={`Contactar a ${taller?.nombre ?? ""}`}
+      title={`Contactar a ${taller?.name ?? ""}`}
       description="Cuéntale al taller qué necesitas — te contactará directo a tu teléfono."
     >
       {estado === "done" && codigo ? (
@@ -151,7 +195,7 @@ function ContactarDialog({
           <div>
             <p className="text-sm font-bold text-foreground">Solicitud enviada</p>
             <p className="mt-1 max-w-xs text-xs text-muted-foreground">
-              {taller?.nombre} recibió tus datos y te va a contactar por WhatsApp.
+              {taller?.name} recibió tus datos y te va a contactar por WhatsApp.
             </p>
           </div>
 
@@ -165,7 +209,7 @@ function ContactarDialog({
           <div className="flex w-full gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 text-left">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
             <p className="text-xs leading-relaxed text-amber-800">
-              Cuando {taller?.nombre} te escriba, debe decirte este código:{" "}
+              Cuando {taller?.name} te escriba, debe decirte este código:{" "}
               <span className="font-mono font-bold">{codigo}</span>. Si no coincide, o te piden plata o datos antes
               de decírtelo, no sigas.
             </p>
@@ -202,6 +246,8 @@ function ContactarDialog({
             placeholder="Si prefieres que te escriban por WhatsApp"
             accent="brand"
           />
+
+          {error && <p className="text-xs font-semibold text-red-600">{error}</p>}
 
           <button
             type="button"
@@ -254,21 +300,21 @@ function MisSolicitudes({ contactos }: { contactos: ContactoTaller[] }) {
             contactos.map((c) => (
               <div key={c.id} className="space-y-1.5 rounded-lg border border-black/[0.06] p-3">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs font-bold text-foreground">{c.tallerNombre}</p>
-                  <span className="shrink-0 text-[10px] text-muted-foreground">{formatFecha(c.createdAt)}</span>
+                  <p className="text-xs font-bold text-foreground">{c.tallerNombre ?? "Taller"}</p>
+                  <span className="shrink-0 text-[10px] text-muted-foreground">{formatFecha(c.created_at)}</span>
                 </div>
                 <p className="line-clamp-2 text-[11px] text-muted-foreground">{c.descripcion}</p>
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-mono text-xs font-bold text-brand-700">{c.codigoVerificacion}</span>
+                  <span className="font-mono text-xs font-bold text-brand-700">{c.codigo_verificacion}</span>
                   <span
                     className={cn(
                       "rounded-full border px-2 py-0.5 text-[10px] font-semibold",
-                      c.status === "atendido"
+                      c.status === "ganado" || c.status === "contactado"
                         ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-700"
                         : "border-amber-500/20 bg-amber-500/10 text-amber-700"
                     )}
                   >
-                    {c.status === "atendido" ? "Atendido" : "Pendiente"}
+                    {c.status === "nuevo" ? "Pendiente" : c.status === "contactado" ? "Contactado" : c.status}
                   </span>
                 </div>
               </div>
@@ -285,6 +331,7 @@ function MisSolicitudes({ contactos }: { contactos: ContactoTaller[] }) {
 type SearchStatus = "idle" | "loading" | "done";
 
 export default function ClienteBuscarTalleres() {
+  const { session } = useAuth();
   const [termino, setTermino] = useState("");
   const [resultados, setResultados] = useState<TallerVerificado[]>([]);
   const [status, setStatus] = useState<SearchStatus>("idle");
@@ -292,15 +339,27 @@ export default function ClienteBuscarTalleres() {
   const [contactando, setContactando] = useState<TallerVerificado | null>(null);
   const [contactos, setContactos] = useState<ContactoTaller[]>([]);
 
-  const handleSearch = useCallback(() => {
+  const cargarContactos = useCallback(async () => {
+    if (!session) return;
+    const { data } = await supabase
+      .from("comercio_contactos")
+      .select("id, comercio_id, descripcion, telefono, status, codigo_verificacion, created_at")
+      .order("created_at", { ascending: false });
+    if (data) setContactos(data as ContactoTaller[]);
+  }, [session]);
+
+  useEffect(() => {
+    void cargarContactos();
+  }, [cargarContactos]);
+
+  const handleSearch = useCallback(async () => {
     const q = termino.trim();
     if (!q || status === "loading") return;
     setStatus("loading");
     setBuscado(true);
-    setTimeout(() => {
-      setResultados(buscarTalleresVerificados(q));
-      setStatus("done");
-    }, 500);
+    const { data, error } = await supabase.rpc("buscar_comercios_verificados", { p_termino: q });
+    setResultados(!error && data ? (data as TallerVerificado[]) : []);
+    setStatus("done");
   }, [termino, status]);
 
   return (
@@ -369,7 +428,7 @@ export default function ClienteBuscarTalleres() {
 
       <MisSolicitudes contactos={contactos} />
 
-      <ContactarDialog taller={contactando} onClose={() => setContactando(null)} onSuccess={(c) => setContactos((prev) => [c, ...prev])} />
+      <ContactarDialog taller={contactando} onClose={() => setContactando(null)} onSuccess={() => void cargarContactos()} />
     </div>
   );
 }

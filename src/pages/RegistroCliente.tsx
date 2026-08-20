@@ -22,14 +22,18 @@ import { SelectableCard } from "@/components/SelectableCard";
 import { StepProgress } from "@/components/StepProgress";
 import { Button } from "@/components/Button";
 import { CIUDADES, OPCIONES_MOTORIZACION, type Motorizacion } from "@/lib/data";
+import { useAuth } from "@/lib/AuthProvider";
 
 type Vehiculo = "carro" | "moto" | "ambos";
 
 const STEPS = ["Tus datos", "Tu ciudad", "Tu vehículo", "Listo"];
 
 export default function RegistroCliente() {
+  const { registrarCliente } = useAuth();
   const [step, setStep] = useState(0);
   const [error, setError] = useState("");
+  const [enviando, setEnviando] = useState(false);
+  const [requiereConfirmacion, setRequiereConfirmacion] = useState(false);
 
   const [nombres, setNombres] = useState("");
   const [apellidos, setApellidos] = useState("");
@@ -78,8 +82,25 @@ export default function RegistroCliente() {
     if (v !== "moto" && v !== "ambos") setMotoMotorizacion(null);
   }
 
-  function next() {
+  async function next() {
     if (!validateStep()) return;
+    if (step === STEPS.length - 2) {
+      // Último paso con datos reales — acá se crea la cuenta de verdad.
+      setEnviando(true);
+      const { error: err, requiereConfirmacion: pendiente } = await registrarCliente({
+        correo,
+        password,
+        nombre: `${nombres.trim()} ${apellidos.trim()}`.trim(),
+        celular,
+        ciudad,
+        vehiculo: vehiculo ?? undefined,
+        carroMotorizacion,
+        motoMotorizacion,
+      });
+      setEnviando(false);
+      if (err) return fail(err);
+      setRequiereConfirmacion(pendiente);
+    }
     setStep((s) => Math.min(s + 1, STEPS.length - 1));
   }
   function back() {
@@ -206,14 +227,21 @@ export default function RegistroCliente() {
                 <PartyPopper className="h-8 w-8 text-brand-600" />
               </motion.div>
               <h2 className="text-2xl font-black tracking-tight text-foreground">¡Listo, {nombres || "bienvenido"}!</h2>
-              <p className="mt-2.5 text-sm text-muted-foreground leading-relaxed">
-                Ya tenemos tus datos. Más adelante te vamos a ir preguntando algunas cosas más
-                (como tu dirección o dónde trabajás) para afinar aún más las recomendaciones —
-                nada que llenar de una sola vez.
-              </p>
-              <Link to="/clientes" className="mt-7 inline-block">
+              {requiereConfirmacion ? (
+                <p className="mt-2.5 text-sm text-muted-foreground leading-relaxed">
+                  Te mandamos un correo a <span className="font-semibold text-foreground">{correo}</span> para confirmar
+                  tu cuenta — confirmalo y después ya podés iniciar sesión.
+                </p>
+              ) : (
+                <p className="mt-2.5 text-sm text-muted-foreground leading-relaxed">
+                  Ya creamos tu cuenta. Más adelante te vamos a ir preguntando algunas cosas más
+                  (como tu dirección o dónde trabajás) para afinar aún más las recomendaciones —
+                  nada que llenar de una sola vez.
+                </p>
+              )}
+              <Link to={requiereConfirmacion ? "/login/cliente" : "/clientes"} className="mt-7 inline-block">
                 <Button as="span" variant="brand" size="lg">
-                  Ir a buscar un taller
+                  {requiereConfirmacion ? "Ir a iniciar sesión" : "Ir a buscar un taller"}
                 </Button>
               </Link>
             </motion.div>
@@ -235,8 +263,8 @@ export default function RegistroCliente() {
             ) : (
               <span />
             )}
-            <Button as="button" type="button" onClick={next} variant="brand" size="md" icon={ArrowRight}>
-              {step === STEPS.length - 2 ? "Terminar" : "Continuar"}
+            <Button as="button" type="button" onClick={next} variant="brand" size="md" icon={ArrowRight} disabled={enviando}>
+              {enviando ? "Creando cuenta…" : step === STEPS.length - 2 ? "Terminar" : "Continuar"}
             </Button>
           </div>
         )}

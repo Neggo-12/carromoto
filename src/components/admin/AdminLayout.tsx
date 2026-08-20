@@ -1,5 +1,6 @@
 import { NavLink, Outlet, Link, useNavigate } from "react-router-dom";
 import { LayoutGrid, Store, Users, BarChart3, Wrench, LogOut, ShieldCheck } from "lucide-react";
+import { useAuth } from "@/lib/AuthProvider";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
@@ -16,8 +17,10 @@ const NAV_ITEMS = [
  */
 export function AdminLayout() {
   const navigate = useNavigate();
+  const { cerrarSesion } = useAuth();
 
-  function handleLogout() {
+  async function handleLogout() {
+    await cerrarSesion();
     navigate("/admin/login");
   }
 

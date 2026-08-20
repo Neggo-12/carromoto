@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import { Gift, Search, Sparkles, ArrowRight, Coins } from "lucide-react";
-import { AntiPhishingBanner } from "@/components/cliente/AntiPhishingBanner";
 
 export default function ClienteInicio() {
   return (
@@ -11,12 +10,8 @@ export default function ClienteInicio() {
           Portal de Cliente
         </div>
         <h1 className="text-2xl font-black tracking-tight text-foreground sm:text-3xl">Bienvenido de vuelta</h1>
-        <p className="text-sm text-muted-foreground">
-          Este es un adelanto del portal, con datos de ejemplo — todavía estamos conectando tu cuenta real.
-        </p>
+        <p className="text-sm text-muted-foreground">Buscá talleres, mirá ofertas y llevá el control de tus puntos.</p>
       </div>
-
-      <AntiPhishingBanner />
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Link

@@ -1,4 +1,17 @@
 -- =============================================================================
+-- ⚠️ SECCIÓN A DESACTUALIZADA (17 ago 2026) — NO usar cliente_puntos_movimientos
+-- ni canjear_recompensa() como fuente de verdad del saldo. Se confirmó que el
+-- saldo de puntos lo maneja un proyecto EXTERNO y separado, "Puntos Neggo"
+-- (repo/Supabase propios, ya en producción — ver puntos-neggo/docs/
+-- sistema-puntos-unificado.md). Taller Aval nunca guarda el saldo como
+-- verdad: genera un comprobante propio (ver 0004_comprobantes_puntos_neggo.sql)
+-- y le avisa a Puntos Neggo vía su función otorgar_puntos, servidor-a-servidor
+-- con x-internal-secret. La tabla de acá abajo puede servir como caché de
+-- lectura si hace falta, pero NUNCA como origen de la resta/suma real. La
+-- Sección B (score de talleres) sigue vigente tal cual, no la toca esto.
+-- =============================================================================
+
+-- =============================================================================
 -- Puntos de Cliente + Score de Talleres — migración lista para cuando exista
 -- el proyecto de Supabase PROPIO de Taller Aval. Sigue al archivo
 -- 0001_ofertas_buscar_talleres.sql (mismas advertencias aplican: no correr
@@ -103,11 +116,46 @@ begin
 end;
 $$;
 
--- ── B. Multiplicador de puntos en ofertas ──
--- Extiende `campanas` (creada en 0001) para promociones tipo "gana el doble
--- de puntos este fin de semana" que pidió el negocio como ejemplo.
-alter table public.campanas add column if not exists multiplicador_puntos integer;
-alter table public.campanas add column if not exists multiplicador_vigencia text;
+-- ── B. Campaña de puntos del taller ──
+-- ⚠️ REEMPLAZA EL DISEÑO ANTERIOR (17 ago 2026): el dueño del negocio aclaró
+-- que el multiplicador de puntos NO va pegado a una oferta puntual — lo
+-- activa el taller en general ("puntos dobles este fin de semana") y se le
+-- refleja al cliente sin que dependa de qué oferta esté mirando. Por eso acá
+-- ya NO se altera `campanas` (creada en 0001); en su lugar, una tabla propia
+-- por taller. Si `campanas.multiplicador_puntos`/`multiplicador_vigencia`
+-- llegaron a crearse en un ambiente real antes de este cambio, hay que
+-- dropearlas en una migración aparte — no se hace acá para no romper datos
+-- que ya pudieran existir.
+create table public.campanas_puntos (
+  organization_id text primary key references public.organizations(id),
+  multiplicador integer not null check (multiplicador in (2, 3)),
+  motivo text not null,
+  vigencia text not null, -- texto libre, ej. "Este fin de semana (sáb-dom)"
+  activa boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+comment on table public.campanas_puntos is 'Una fila por taller: la campaña de puntos que tiene activa ahora mismo (o la última que tuvo, con activa=false). El taller la prende/apaga desde su panel; comprobantes.ts la consulta al calcular el multiplicador de una venta nueva junto con el 2X automático de Puntos Neggo por "cliente nuevo" — se aplica el más alto de los dos, nunca la suma.';
+
+alter table public.campanas_puntos enable row level security;
+
+-- set_updated_at() ya se define en 0000_base_schema.sql (primera migración
+-- en aplicarse) — no se repite acá.
+create trigger trg_campanas_puntos_updated_at
+before update on public.campanas_puntos
+for each row execute function public.set_updated_at();
+
+-- Visible para cualquier cliente (necesita verla reflejada sin ser dueño
+-- del taller), editable solo por el taller dueño o el admin.
+create policy campanas_puntos_select
+  on public.campanas_puntos for select
+  using (true);
+
+create policy campanas_puntos_write_owner
+  on public.campanas_puntos for all
+  using (user_belongs_to_organization(organization_id) or is_platform_admin())
+  with check (user_belongs_to_organization(organization_id) or is_platform_admin());
 
 -- ── C. Score de talleres ──
 -- Los factores viven en su propia tabla (no directo en organizations) para
@@ -153,7 +201,12 @@ create policy taller_score_factores_write_admin
 --   11. El score de un taller cambia si se actualizan sus factores en
 --       taller_score_factores, y es visible para cualquier cliente (no solo
 --       el propio taller ni el admin).
---   12. Publicar una oferta con multiplicador de puntos guarda
---       multiplicador_puntos y multiplicador_vigencia, y el cliente los ve
---       en la tarjeta de la oferta.
+--   12. El taller activa una campaña de puntos desde su panel y queda una
+--       sola fila activa en campanas_puntos por taller (activar una nueva
+--       reemplaza/desactiva la anterior); el cliente la ve reflejada en
+--       Ofertas, Buscar Talleres y en cualquier venta nueva que le
+--       registren, sin tener que hacer nada de su lado.
+--   12b. Al calcular el multiplicador de una venta, el más alto entre
+--        "cliente nuevo" (2X, lo decide Puntos Neggo) y la campaña activa
+--        del taller (2X o 3X) gana — nunca se suman.
 -- =============================================================================

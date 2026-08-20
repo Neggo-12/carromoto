@@ -1,8 +1,10 @@
-import { useState, useCallback } from "react";
-import { Gift, MapPin, Sparkles, CheckCircle2, Loader2, Zap, Coins } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Gift, MapPin, Sparkles, CheckCircle2, Loader2, Zap } from "lucide-react";
 import { Modal } from "@/components/Modal";
 import { TextField } from "@/components/TextField";
-import { OFERTAS_MOCK, CATEGORIA_LABELS, type OfertaCampana } from "@/lib/clienteData";
+import { CATEGORIA_LABELS, type CategoriaTaller } from "@/lib/categorias";
+import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/lib/AuthProvider";
 import { cn } from "@/lib/utils";
 
 type EstadoSolicitud = "idle" | "loading" | "enviada";
@@ -13,11 +15,27 @@ export interface DatosInteres {
   whatsapp: string | null;
 }
 
+interface Segmentacion {
+  ciudades?: string[];
+  tipoVehiculo?: string[];
+  categoria?: CategoriaTaller[];
+}
+
+interface OfertaReal {
+  id: string;
+  titulo: string;
+  descripcion: string | null;
+  tallerNombre: string;
+  ciudades: string[];
+  categorias: CategoriaTaller[];
+  soloElectricosHibridos: boolean;
+}
+
 /**
- * Tarjeta de oferta — clon de CampanaOfferCard de Neggo (OfertasView.tsx),
- * sin los sub-tabs de sector ni "Crear Meta de Ahorro" (no aplican acá, un
- * solo vertical: talleres/repuestos). Botón "Me interesa" abre el formulario
- * de contacto (ver InteresModal); "No me interesa" la saca de la vista.
+ * Tarjeta de oferta — leída directo de campanas (estado='activa', visibles
+ * para cualquier cliente autenticado por RLS). El multiplicador de puntos ya
+ * no se muestra acá: no hay integración real con Puntos Neggo todavía, así
+ * que mostrar un "x2 puntos" sería inventado.
  */
 function OfertaCard({
   oferta,
@@ -25,7 +43,7 @@ function OfertaCard({
   onMeInteresa,
   onDescartar,
 }: {
-  oferta: OfertaCampana;
+  oferta: OfertaReal;
   estado: EstadoSolicitud;
   onMeInteresa: () => void;
   onDescartar: () => void;
@@ -54,18 +72,13 @@ function OfertaCard({
       <div className="mt-3 flex flex-wrap gap-1.5">
         <span className="inline-flex items-center gap-1 rounded-full bg-black/[0.03] px-2.5 py-1 text-[10px] font-semibold text-muted-foreground">
           <MapPin className="h-3 w-3 text-brand-600" />
-          {oferta.ciudades.join(", ")}
+          {oferta.ciudades.length > 0 ? oferta.ciudades.join(", ") : "Todas las ciudades"}
         </span>
         {oferta.categorias.map((c) => (
           <span key={c} className="inline-flex items-center gap-1 rounded-full bg-black/[0.03] px-2.5 py-1 text-[10px] font-semibold text-muted-foreground">
             {CATEGORIA_LABELS[c]}
           </span>
         ))}
-        {oferta.multiplicadorPuntos && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2.5 py-1 text-[10px] font-bold text-amber-700">
-            <Coins className="h-3 w-3" /> Gana x{oferta.multiplicadorPuntos} puntos · {oferta.multiplicadorVigencia}
-          </span>
-        )}
       </div>
 
       <button
@@ -109,15 +122,12 @@ function OfertaCard({
 }
 
 // ── Formulario de "Me interesa" ──
-// El taller necesita saber quién está interesado para poder escribirle, así
-// que pedimos nombre y teléfono acá mismo (en vez de solo registrar el clic
-// a ciegas). Estos datos son los que después va a ver el negocio en su CRM.
 function InteresModal({
   oferta,
   onClose,
   onSubmit,
 }: {
-  oferta: OfertaCampana | null;
+  oferta: OfertaReal | null;
   onClose: () => void;
   onSubmit: (datos: DatosInteres) => void;
 }) {
@@ -170,21 +180,62 @@ function InteresModal({
 }
 
 export default function ClienteOfertas() {
+  const { perfil } = useAuth();
+  const [cargando, setCargando] = useState(true);
+  const [ofertas, setOfertas] = useState<OfertaReal[]>([]);
   const [estados, setEstados] = useState<Record<string, EstadoSolicitud>>({});
   const [descartadas, setDescartadas] = useState<Set<string>>(new Set());
-  const [interesEn, setInteresEn] = useState<OfertaCampana | null>(null);
+  const [interesEn, setInteresEn] = useState<OfertaReal | null>(null);
 
-  const handleConfirmarInteres = useCallback((datos: DatosInteres) => {
-    if (!interesEn) return;
-    const id = interesEn.id;
-    setEstados((prev) => ({ ...prev, [id]: "loading" }));
-    setInteresEn(null);
-    // En el proyecto real, `datos` se guarda en oferta_solicitudes junto con
-    // el id de la campaña, y el taller lo ve en su propio CRM.
-    setTimeout(() => {
-      setEstados((prev) => ({ ...prev, [id]: "enviada" }));
-    }, 700);
-  }, [interesEn]);
+  useEffect(() => {
+    let activo = true;
+    async function cargar() {
+      setCargando(true);
+      const { data, error } = await supabase
+        .from("campanas")
+        .select("id, titulo, descripcion, segmentacion, organizations(name)")
+        .eq("estado", "activa")
+        .order("created_at", { ascending: false });
+      if (!activo) return;
+      if (!error && data) {
+        const mapeadas: OfertaReal[] = data.map((c) => {
+          const seg = (c.segmentacion ?? {}) as Segmentacion;
+          const org = c.organizations as unknown as { name: string } | null;
+          return {
+            id: c.id,
+            titulo: c.titulo,
+            descripcion: c.descripcion,
+            tallerNombre: org?.name ?? "Taller verificado",
+            ciudades: seg.ciudades ?? [],
+            categorias: seg.categoria ?? [],
+            soloElectricosHibridos: (seg.tipoVehiculo ?? []).length > 0,
+          };
+        });
+        setOfertas(mapeadas);
+      }
+      setCargando(false);
+    }
+    cargar();
+    return () => {
+      activo = false;
+    };
+  }, []);
+
+  const handleConfirmarInteres = useCallback(
+    (datos: DatosInteres) => {
+      if (!interesEn) return;
+      const id = interesEn.id;
+      setEstados((prev) => ({ ...prev, [id]: "loading" }));
+      setInteresEn(null);
+      supabase
+        .from("oferta_solicitudes")
+        .insert({ campana_id: id, nombre: datos.nombre, telefono: datos.telefono, whatsapp: datos.whatsapp })
+        .then(({ error }) => {
+          setEstados((prev) => ({ ...prev, [id]: error ? "idle" : "enviada" }));
+        });
+    },
+    [interesEn]
+  );
 
   const handleDescartar = useCallback((id: string) => {
     setDescartadas((prev) => {
@@ -194,7 +245,13 @@ export default function ClienteOfertas() {
     });
   }, []);
 
-  const visibles = OFERTAS_MOCK.filter((o) => !descartadas.has(o.id));
+  // Filtro liviano por ciudad/vehículo del cliente cuando el dato existe —
+  // una oferta sin ciudades/categorías guardadas aplica a todos.
+  const visibles = ofertas.filter((o) => {
+    if (descartadas.has(o.id)) return false;
+    if (perfil?.ciudad && o.ciudades.length > 0 && !o.ciudades.includes(perfil.ciudad)) return false;
+    return true;
+  });
 
   return (
     <div className="space-y-6">
@@ -206,9 +263,7 @@ export default function ClienteOfertas() {
             </div>
             <h1 className="text-lg font-black tracking-tight text-foreground">Ofertas para ti</h1>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Promociones activas de talleres y almacenes verificados — datos de ejemplo por ahora.
-          </p>
+          <p className="text-xs text-muted-foreground">Promociones activas de talleres y almacenes verificados.</p>
         </div>
         <span className="inline-flex items-center gap-1.5 self-start rounded-full border border-brand-500/20 bg-brand-500/10 px-3 py-1 text-xs font-bold text-brand-700">
           <Sparkles className="h-3 w-3" />
@@ -216,7 +271,11 @@ export default function ClienteOfertas() {
         </span>
       </div>
 
-      {visibles.length === 0 ? (
+      {cargando ? (
+        <div className="flex items-center justify-center gap-2 py-16 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" /> Cargando ofertas...
+        </div>
+      ) : visibles.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-black/10 py-16 text-center">
           <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-brand-500/20 bg-brand-500/10">
             <Gift className="h-6 w-6 text-brand-600" />

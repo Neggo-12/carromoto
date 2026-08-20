@@ -1,5 +1,6 @@
 import { NavLink, Outlet, Link, useNavigate } from "react-router-dom";
 import { LayoutGrid, Gift, Search, LogOut, Car, Coins } from "lucide-react";
+import { useAuth } from "@/lib/AuthProvider";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
@@ -12,15 +13,15 @@ const NAV_ITEMS = [
 /**
  * Shell del Portal de Cliente — sidebar fija + contenido. Mismo patrón que
  * AdminLayout (sidebar + <Outlet/>), pero con la paleta brand (azul) del
- * lado público, para que se sienta parte del sitio de clientes.
- * Nota: todavía no hay login real conectado, así que cualquiera puede entrar
- * a esta ruta directamente — igual que pasa hoy con /admin. Cuando conectemos
- * Supabase, esto se protege con la sesión real del cliente.
+ * lado público, para que se sienta parte del sitio de clientes. La ruta la
+ * protege <RequireAuth> en App.tsx en cuanto Supabase esté configurado.
  */
 export function ClientePortalLayout() {
   const navigate = useNavigate();
+  const { cerrarSesion } = useAuth();
 
-  function handleLogout() {
+  async function handleLogout() {
+    await cerrarSesion();
     navigate("/login/cliente");
   }
 

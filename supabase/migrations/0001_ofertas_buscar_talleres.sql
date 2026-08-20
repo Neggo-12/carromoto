@@ -34,31 +34,10 @@
 -- Esas tres tablas son la base de todo el modelo de datos del proyecto, no
 -- solo de estas dos features — se crean en una migración aparte.
 
--- ── 1. Funciones base (verificar si ya existen antes de correr) ──
-
-create or replace function public.is_platform_admin()
-returns boolean
-language sql stable security definer
-set search_path to 'public'
-as $$
-  select exists (
-    select 1 from public.users
-    where id = auth.uid()::text and rol = 'Admin'
-  );
-$$;
-
-create or replace function public.user_belongs_to_organization(org_id text)
-returns boolean
-language sql stable security definer
-set search_path to 'public'
-as $$
-  select exists (
-    select 1 from public.memberships m
-    where m.organization_id = org_id
-      and m.user_id = auth.uid()::text
-      and m.is_active = true
-  );
-$$;
+-- ── 1. Funciones base ──
+-- is_platform_admin() y user_belongs_to_organization() ahora se definen en
+-- 0000_base_schema.sql (la primera migración en aplicarse, junto con las
+-- tablas users/memberships de las que dependen) — acá ya no se repiten.
 
 -- ── 2. Feature 1: Buscar Talleres ──
 
@@ -152,7 +131,7 @@ as $$
     o.created_at,
     'TA-' || upper(left(o.id, 6)) as codigo_neggo
   from organizations o
-  where o.type = 'comercio' and o.has_trust_seal = true and o.status = 'approved'
+  where o.type in ('taller', 'almacen') and o.has_trust_seal = true and o.status = 'aprobado'
     and lower(regexp_replace(o.name, '\s+', '', 'g'))
         ilike '%' || lower(regexp_replace(p_termino, '\s+', '', 'g')) || '%'
   order by
@@ -191,7 +170,7 @@ begin
 
   if not exists (
     select 1 from organizations
-    where id = p_comercio_id and type = 'comercio' and has_trust_seal = true and status = 'approved'
+    where id = p_comercio_id and type in ('taller', 'almacen') and has_trust_seal = true and status = 'aprobado'
   ) then
     raise exception 'Taller no válido o sin Sello de Confianza activo.';
   end if;
@@ -315,7 +294,7 @@ create policy eventos_uso_cliente_select_admin on public.eventos_uso_cliente for
 -- Checklist antes de dar esto por conectado en el proyecto real:
 --   1. tsc --noEmit limpio.
 --   2. Con un cliente autenticado: buscar un taller sembrado de prueba
---      (has_trust_seal = true, status = 'approved') devuelve resultado;
+--      (has_trust_seal = true, status = 'aprobado') devuelve resultado;
 --      uno sin sello no aparece.
 --   3. Contactar un taller genera un código visible y lo persiste (recargar
 --      "Mis Solicitudes" y verlo).

@@ -1,30 +1,36 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Mail, ArrowRight, ShieldCheck, Wrench } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { Mail, ArrowRight, ShieldCheck, Wrench, AlertCircle } from "lucide-react";
 import { TextField } from "@/components/TextField";
 import { PasswordField } from "@/components/PasswordField";
 import { Button } from "@/components/Button";
+import { useAuth } from "@/lib/AuthProvider";
 
 /**
  * Login del administrador — deliberadamente separado de Cliente/Taller,
  * sin enlaces desde el sitio público. Paleta neutra (slate), no lleva
- * branding de marketing: es una puerta de entrada interna.
+ * branding de marketing: es una puerta de entrada interna. No hay registro
+ * público de Admin — ese rol se asigna a mano (ver 0005_registro_auth.sql).
  */
 export default function AdminLogin() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { iniciarSesion } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [enviando, setEnviando] = useState(false);
+  const [error, setError] = useState("");
 
-  function handleSubmit(e: React.FormEvent) {
+  const avisoRolIncorrecto = (location.state as { motivo?: string } | null)?.motivo === "rol_incorrecto";
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setError("");
     setEnviando(true);
-    // Sin backend todavía — dejamos el flujo listo para conectar auth real
-    // (Supabase) con permisos de administrador.
-    setTimeout(() => {
-      setEnviando(false);
-      navigate("/admin");
-    }, 700);
+    const { error: err } = await iniciarSesion(email, password);
+    setEnviando(false);
+    if (err) return setError(err);
+    navigate("/admin");
   }
 
   return (
@@ -45,6 +51,13 @@ export default function AdminLogin() {
           <h1 className="text-xl font-black tracking-tight text-foreground">Panel del equipo Taller Aval</h1>
           <p className="mt-1.5 text-sm text-muted-foreground">Solo para administradores de la plataforma.</p>
 
+          {avisoRolIncorrecto && (
+            <div className="mt-4 flex gap-2 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+              <p className="text-xs text-amber-800">Esa cuenta no tiene permisos de administrador.</p>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="mt-7 space-y-4">
             <TextField
               label="Correo administrativo"
@@ -57,7 +70,9 @@ export default function AdminLogin() {
             />
             <PasswordField label="Contraseña" value={password} onChange={setPassword} autoComplete="current-password" required />
 
-            <Button as="button" type="submit" variant="brand" size="lg" icon={ArrowRight} className="w-full">
+            {error && <p className="text-xs font-semibold text-red-600">{error}</p>}
+
+            <Button as="button" type="submit" variant="brand" size="lg" icon={ArrowRight} className="w-full" disabled={enviando}>
               {enviando ? "Entrando…" : "Entrar al panel"}
             </Button>
           </form>

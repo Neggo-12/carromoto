@@ -1,5 +1,6 @@
 import { NavLink, Outlet, Link, useNavigate } from "react-router-dom";
-import { LayoutGrid, Store, Users, Gift, LogOut, Wrench, Trophy } from "lucide-react";
+import { LayoutGrid, Store, Users, Gift, LogOut, Wrench, Trophy, Receipt } from "lucide-react";
+import { useAuth } from "@/lib/AuthProvider";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
@@ -7,20 +8,23 @@ const NAV_ITEMS = [
   { to: "/portal/taller/perfil", label: "Mi Perfil", icon: Store },
   { to: "/portal/taller/solicitudes", label: "CRM", icon: Users },
   { to: "/portal/taller/ofertas", label: "Ofertas", icon: Gift },
+  { to: "/portal/taller/comprobantes", label: "Comprobantes", icon: Receipt },
   { to: "/portal/taller/score", label: "Mi Score", icon: Trophy },
 ];
 
 /**
  * Shell del Panel de Taller — mismo patrón que AdminLayout/ClientePortalLayout
  * (sidebar + <Outlet/>), con la paleta signal (naranja) del lado de talleres.
- * Sin login real todavía, así que cualquiera puede entrar directo a esta
- * ruta — igual que /admin y /portal/cliente hoy. Se protege de verdad cuando
- * conectemos Supabase y la aprobación del taller controle el acceso real.
+ * La ruta la protege <RequireAuth> en App.tsx en cuanto Supabase esté
+ * configurado; mientras tanto sigue abierta como siempre, con datos de
+ * ejemplo.
  */
 export function TallerLayout() {
   const navigate = useNavigate();
+  const { cerrarSesion } = useAuth();
 
-  function handleLogout() {
+  async function handleLogout() {
+    await cerrarSesion();
     navigate("/login/taller");
   }
 

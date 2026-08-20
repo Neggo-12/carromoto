@@ -35,14 +35,19 @@ import {
   OPCIONES_MOTORIZACION,
   type Motorizacion,
 } from "@/lib/data";
+import { useAuth } from "@/lib/AuthProvider";
 
 type TipoVehiculo = "carro" | "moto" | "ambos";
 type TipoNegocio = "taller" | "almacen";
 
 export default function RegistroTaller() {
+  const { registrarTaller } = useAuth();
   const [step, setStep] = useState(0);
   const [error, setError] = useState("");
+  const [enviando, setEnviando] = useState(false);
+  const [requiereConfirmacion, setRequiereConfirmacion] = useState(false);
 
+  const [nombreEncargado, setNombreEncargado] = useState("");
   const [correo, setCorreo] = useState("");
   const [celular, setCelular] = useState("");
   const [password, setPassword] = useState("");
@@ -119,6 +124,7 @@ export default function RegistroTaller() {
   function validateStep(): boolean {
     setError("");
     if (step === 0) {
+      if (!nombreEncargado.trim()) return fail("Contanos tu nombre.");
       if (!/^\S+@\S+\.\S+$/.test(correo)) return fail("Ese correo no se ve válido.");
       if (celular.replace(/\D/g, "").length < 10) return fail("Escribí el celular completo, con indicativo.");
       if (password.length < 6) return fail("La contraseña necesita al menos 6 caracteres.");
@@ -155,8 +161,34 @@ export default function RegistroTaller() {
     return true;
   }
 
-  function next() {
+  async function next() {
     if (!validateStep()) return;
+    if (step === STEPS.length - 2) {
+      // Último paso con datos reales — acá se crea la cuenta + el negocio.
+      setEnviando(true);
+      const { error: err, requiereConfirmacion: pendiente } = await registrarTaller({
+        correo,
+        password,
+        nombre: nombreEncargado.trim(),
+        celular,
+        nombreNegocio: nombreNegocio.trim(),
+        tipoNegocio: tipoNegocio ?? "taller",
+        ciudad,
+        metadata: {
+          barrio,
+          direccion,
+          tipo_vehiculo: tipoVehiculo,
+          carro_motorizacion: carroMotorizacion,
+          moto_motorizacion: motoMotorizacion,
+          especialista_electricos: especialistaElectricos,
+          servicios,
+          horario,
+        },
+      });
+      setEnviando(false);
+      if (err) return fail(err);
+      setRequiereConfirmacion(pendiente);
+    }
     setStep((s) => Math.min(s + 1, STEPS.length - 1));
   }
   function back() {
@@ -191,6 +223,7 @@ export default function RegistroTaller() {
               <p className="mt-1.5 text-sm text-muted-foreground">Con esto vas a entrar a tu panel más adelante.</p>
 
               <div className="mt-6 space-y-4">
+                <TextField label="Tu nombre" icon={Store} value={nombreEncargado} onChange={setNombreEncargado} placeholder="Carlos Ramírez" accent="signal" required />
                 <TextField label="Correo electrónico" type="email" icon={Mail} value={correo} onChange={setCorreo} placeholder="negocio@ejemplo.com" accent="signal" required />
                 <TextField label="Celular (WhatsApp)" icon={Phone} prefix="+57" value={celular} onChange={setCelular} placeholder="300 123 4567" accent="signal" required />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-3">
@@ -391,13 +424,21 @@ export default function RegistroTaller() {
               <h2 className="text-2xl font-black tracking-tight text-foreground">
                 ¡Listo, {nombreNegocio || "bienvenido"}!
               </h2>
-              <p className="mt-2.5 text-sm text-muted-foreground leading-relaxed">
-                Ya tenemos los datos de tu negocio. El siguiente paso es la verificación de
-                identidad para activar tu Sello de Confianza — te avisamos apenas esté disponible.
-              </p>
-              <Link to="/talleres" className="mt-7 inline-block">
+              {requiereConfirmacion ? (
+                <p className="mt-2.5 text-sm text-muted-foreground leading-relaxed">
+                  Te mandamos un correo a <span className="font-semibold text-foreground">{correo}</span> para confirmar
+                  tu cuenta — confirmalo y después ya podés iniciar sesión. Tu negocio queda pendiente de aprobación
+                  hasta que verifiquemos tu identidad.
+                </p>
+              ) : (
+                <p className="mt-2.5 text-sm text-muted-foreground leading-relaxed">
+                  Ya creamos tu cuenta y guardamos los datos de tu negocio. El siguiente paso es la verificación de
+                  identidad para activar tu Sello de Confianza — te avisamos apenas esté disponible.
+                </p>
+              )}
+              <Link to={requiereConfirmacion ? "/login/taller" : "/talleres"} className="mt-7 inline-block">
                 <Button as="span" variant="signal" size="lg">
-                  Volver a la página de talleres
+                  {requiereConfirmacion ? "Ir a iniciar sesión" : "Volver a la página de talleres"}
                 </Button>
               </Link>
             </motion.div>
@@ -419,8 +460,8 @@ export default function RegistroTaller() {
             ) : (
               <span />
             )}
-            <Button as="button" type="button" onClick={next} variant="signal" size="md" icon={ArrowRight}>
-              {step === STEPS.length - 2 ? "Terminar" : "Continuar"}
+            <Button as="button" type="button" onClick={next} variant="signal" size="md" icon={ArrowRight} disabled={enviando}>
+              {enviando ? "Creando cuenta…" : step === STEPS.length - 2 ? "Terminar" : "Continuar"}
             </Button>
           </div>
         )}
