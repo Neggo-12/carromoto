@@ -22,39 +22,54 @@ export default function AdminLogin() {
   const [error, setError] = useState("");
   // Ver LoginCliente.tsx: esperamos a que session/perfil del AuthProvider
   // reflejen el login real antes de navegar, en vez de navegar apenas se
-  // resuelve la promesa de signInWithPassword (eso causaba que hiciera
-  // falta darle "Entrar al panel" dos veces).
+  // resuelve la promesa de signInWithPassword. No alcanza con esperar
+  // "session && perfil" a secas — si quedaba una sesión vieja de OTRA
+  // cuenta en el navegador, esos dos ya son truthy con datos viejos y
+  // rebota con "esa cuenta no tiene permisos" en el primer intento. Por eso
+  // guardamos el userId que efectivamente inició sesión y solo navegamos
+  // cuando session/perfil ya corresponden a ESE usuario puntual.
   const [intentoLogin, setIntentoLogin] = useState(false);
+  const [userIdEsperado, setUserIdEsperado] = useState<string | null>(null);
 
   const avisoRolIncorrecto = (location.state as { motivo?: string } | null)?.motivo === "rol_incorrecto";
 
   useEffect(() => {
-    if (!intentoLogin) return;
-    if (session && perfil) {
-      navigate("/admin");
+    if (!intentoLogin || !userIdEsperado) return;
+    if (session?.user.id !== userIdEsperado) return;
+    if (!perfil || perfil.id !== userIdEsperado) return;
+    if (perfil.rol !== "Admin") {
+      setEnviando(false);
+      setIntentoLogin(false);
+      setUserIdEsperado(null);
+      setError("Esa cuenta no tiene permisos de administrador.");
+      return;
     }
-  }, [intentoLogin, session, perfil, navigate]);
+    navigate("/admin");
+  }, [intentoLogin, userIdEsperado, session, perfil, navigate]);
 
   useEffect(() => {
-    if (!intentoLogin || (session && perfil)) return;
+    if (!intentoLogin || !userIdEsperado) return;
+    if (session?.user.id === userIdEsperado && perfil?.id === userIdEsperado) return;
     const timeout = setTimeout(() => {
       setEnviando(false);
       setIntentoLogin(false);
+      setUserIdEsperado(null);
       setError("No se pudo cargar tu sesión. Intentá de nuevo.");
     }, 8000);
     return () => clearTimeout(timeout);
-  }, [intentoLogin, session, perfil]);
+  }, [intentoLogin, userIdEsperado, session, perfil]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setEnviando(true);
-    const { error: err } = await iniciarSesion(email, password);
-    if (err) {
+    const { error: err, userId } = await iniciarSesion(email, password);
+    if (err || !userId) {
       setEnviando(false);
-      setError(err);
+      setError(err ?? "No se pudo iniciar sesión. Intentá de nuevo.");
       return;
     }
+    setUserIdEsperado(userId);
     setIntentoLogin(true);
   }
 

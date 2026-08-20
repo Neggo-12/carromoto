@@ -66,6 +66,12 @@ export interface DatosRegistroTaller {
 
 interface ResultadoAuth {
   error: string | null;
+  // Id del usuario que efectivamente inició sesión — lo usan las pantallas
+  // de login para esperar a que session/perfil del contexto correspondan a
+  // ESTE login puntual, y no a una sesión vieja de otra cuenta/rol que haya
+  // quedado en el navegador (ver el bug "esa cuenta no pertenece" que salía
+  // en el primer intento al cambiar de cuenta sin cerrar sesión antes).
+  userId?: string;
 }
 
 interface ResultadoRegistro extends ResultadoAuth {
@@ -207,8 +213,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function iniciarSesion(correo: string, password: string): Promise<ResultadoAuth> {
     if (!supabaseConfigurado) return { error: "Supabase todavía no está configurado en este entorno." };
-    const { error } = await supabase.auth.signInWithPassword({ email: correo, password });
-    return { error: error ? traducirError(error) : null };
+    const { data, error } = await supabase.auth.signInWithPassword({ email: correo, password });
+    if (error) return { error: traducirError(error) };
+    return { error: null, userId: data.user?.id };
   }
 
   async function cerrarSesion() {

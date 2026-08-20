@@ -24,41 +24,62 @@ export default function LoginCliente() {
   // todavía en null y rebotar al usuario de vuelta al login — de ahí que
   // antes hiciera falta darle "Iniciar sesión" dos veces. Ahora esperamos a
   // que session/perfil reflejen el login real antes de navegar.
+  //
+  // No alcanza con esperar "session && perfil" a secas: si en el navegador
+  // ya quedaba una sesión vieja de OTRA cuenta (p. ej. un taller que no
+  // cerró sesión y después probó entrar como cliente), esos dos quedan
+  // truthy de entrada con los datos VIEJOS, navegamos de una con el perfil
+  // equivocado, RequireAuth nos rebota con "esa cuenta no es de cliente" —
+  // y recién el segundo intento funciona porque para entonces sí llegó el
+  // perfil correcto. Por eso guardamos el userId que efectivamente inició
+  // sesión (userIdEsperado) y solo navegamos cuando session/perfil ya
+  // corresponden a ESE usuario puntual.
   const [intentoLogin, setIntentoLogin] = useState(false);
+  const [userIdEsperado, setUserIdEsperado] = useState<string | null>(null);
 
   const avisoRolIncorrecto = (location.state as { motivo?: string } | null)?.motivo === "rol_incorrecto";
 
   useEffect(() => {
-    if (!intentoLogin) return;
-    if (session && perfil) {
-      // Si el visitante dejó una búsqueda por dirección a medias en la Home
-      // pública (buscó, pero no tenía cuenta), lo mandamos directo a que la
-      // vea resuelta en vez de al inicio del portal — ClienteBuscarTalleres
-      // es quien la consume y la borra.
-      navigate(leerBusquedaPendiente() ? "/portal/cliente/buscar-talleres" : "/portal/cliente");
+    if (!intentoLogin || !userIdEsperado) return;
+    if (session?.user.id !== userIdEsperado) return;
+    if (!perfil || perfil.id !== userIdEsperado) return;
+    if (perfil.rol !== "Cliente") {
+      setEnviando(false);
+      setIntentoLogin(false);
+      setUserIdEsperado(null);
+      setError("Esa cuenta no es de cliente — si tenés un taller, entrá por acá abajo.");
+      return;
     }
-  }, [intentoLogin, session, perfil, navigate]);
+    // Si el visitante dejó una búsqueda por dirección a medias en la Home
+    // pública (buscó, pero no tenía cuenta), lo mandamos directo a que la
+    // vea resuelta en vez de al inicio del portal — ClienteBuscarTalleres
+    // es quien la consume y la borra.
+    navigate(leerBusquedaPendiente() ? "/portal/cliente/buscar-talleres" : "/portal/cliente");
+  }, [intentoLogin, userIdEsperado, session, perfil, navigate]);
 
   useEffect(() => {
-    if (!intentoLogin || (session && perfil)) return;
+    if (!intentoLogin || !userIdEsperado) return;
+    if (session?.user.id === userIdEsperado && perfil?.id === userIdEsperado) return;
     const timeout = setTimeout(() => {
       setEnviando(false);
       setIntentoLogin(false);
+      setUserIdEsperado(null);
       setError("No se pudo cargar tu sesión. Intentá de nuevo.");
     }, 8000);
     return () => clearTimeout(timeout);
-  }, [intentoLogin, session, perfil]);
+  }, [intentoLogin, userIdEsperado, session, perfil]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setEnviando(true);
-    const { error: err } = await iniciarSesion(email, password);
-    if (err) {
+    const { error: err, userId } = await iniciarSesion(email, password);
+    if (err || !userId) {
       setEnviando(false);
-      setError(err);
+      setError(err ?? "No se pudo iniciar sesión. Intentá de nuevo.");
       return;
     }
+    setUserIdEsperado(userId);
     setIntentoLogin(true);
   }
 

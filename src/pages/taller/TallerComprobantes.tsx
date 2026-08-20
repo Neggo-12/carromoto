@@ -21,6 +21,7 @@ interface ComprobanteReal {
   monto_pagado: number;
   estado_envio_puntos: string;
   created_at: string;
+  multiplicador: number | null;
 }
 
 interface CampanaPuntosReal {
@@ -29,6 +30,19 @@ interface CampanaPuntosReal {
   motivo: string;
   vigencia: string;
   activa: boolean;
+}
+
+interface CampanaOferta {
+  id: string;
+  titulo: string;
+  estado: string;
+  cupo_maximo: number | null;
+}
+
+interface SolicitudReserva {
+  id: string;
+  nombre: string;
+  telefono: string;
 }
 
 function formatFechaHora(iso: string): string {
@@ -70,7 +84,7 @@ function CampanaPuntosPanel({ organizationId }: { organizationId: string }) {
   }, [organizationId]);
 
   async function handleActivar() {
-    if (!motivo.trim() || !vigencia.trim()) return setError("Contanos el motivo y hasta cuándo aplica.");
+    if (!motivo.trim() || !vigencia.trim()) return setError("Especifica el motivo y la vigencia de la campaña.");
     setError("");
     const nueva = { organization_id: organizationId, multiplicador, motivo: motivo.trim(), vigencia: vigencia.trim(), activa: true };
     const { error: err } = await supabase.from("campanas_puntos").upsert(nueva, { onConflict: "organization_id" });
@@ -183,6 +197,16 @@ export default function TallerComprobantes() {
   const [monto, setMonto] = useState("");
   const [fecha, setFecha] = useState(() => new Date().toISOString().slice(0, 10));
 
+  // Reserva de campaña — si este comprobante corresponde a un cliente que
+  // había reservado una campaña con cupo (botón "Me interesa" en Ofertas),
+  // el taller la elige acá y el comprobante queda enlazado a esa reserva
+  // puntual con multiplicador=3 (ver 0012_campanas_cupo_y_reserva.sql).
+  const [campanas, setCampanas] = useState<CampanaOferta[]>([]);
+  const [campanaSeleccionada, setCampanaSeleccionada] = useState("");
+  const [solicitudes, setSolicitudes] = useState<SolicitudReserva[]>([]);
+  const [solicitudSeleccionada, setSolicitudSeleccionada] = useState("");
+  const [cargandoSolicitudes, setCargandoSolicitudes] = useState(false);
+
   useEffect(() => {
     let activo = true;
     async function cargar() {
@@ -190,13 +214,23 @@ export default function TallerComprobantes() {
         setCargando(false);
         return;
       }
-      const { data } = await supabase
-        .from("comprobantes")
-        .select("id, cliente_nombre, servicio_o_producto, monto_pagado, estado_envio_puntos, created_at")
-        .eq("taller_id", perfil.organizationId)
-        .order("created_at", { ascending: false });
+      const [comprobantesRes, campanasRes] = await Promise.all([
+        supabase
+          .from("comprobantes")
+          .select("id, cliente_nombre, servicio_o_producto, monto_pagado, estado_envio_puntos, created_at, multiplicador")
+          .eq("taller_id", perfil.organizationId)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("campanas")
+          .select("id, titulo, estado, cupo_maximo")
+          .eq("organization_id", perfil.organizationId)
+          .order("created_at", { ascending: false }),
+      ]);
       if (!activo) return;
-      setComprobantes((data as ComprobanteReal[]) ?? []);
+      setComprobantes((comprobantesRes.data as ComprobanteReal[]) ?? []);
+      // Solo campañas con cupo (las "campaña especial x3") tienen sentido acá
+      // — son las que le prometen al cliente puntos x3 por reservar.
+      setCampanas(((campanasRes.data as CampanaOferta[]) ?? []).filter((c) => c.cupo_maximo != null));
       setCargando(false);
     }
     cargar();
@@ -205,11 +239,47 @@ export default function TallerComprobantes() {
     };
   }, [perfil?.organizationId]);
 
+  // Al elegir una campaña, traemos quiénes la reservaron y descartamos a
+  // los que ya tienen un comprobante enlazado (para no asignarle x3 dos
+  // veces al mismo cliente).
+  useEffect(() => {
+    let activo = true;
+    async function cargarSolicitudes() {
+      setSolicitudSeleccionada("");
+      if (!campanaSeleccionada || !perfil?.organizationId) {
+        setSolicitudes([]);
+        return;
+      }
+      setCargandoSolicitudes(true);
+      const [solicitudesRes, usadasRes] = await Promise.all([
+        supabase.from("oferta_solicitudes").select("id, nombre, telefono").eq("campana_id", campanaSeleccionada),
+        supabase.from("comprobantes").select("oferta_solicitud_id").eq("taller_id", perfil.organizationId).not("oferta_solicitud_id", "is", null),
+      ]);
+      if (!activo) return;
+      const usadas = new Set((usadasRes.data ?? []).map((c) => c.oferta_solicitud_id as string));
+      setSolicitudes(((solicitudesRes.data as SolicitudReserva[]) ?? []).filter((s) => !usadas.has(s.id)));
+      setCargandoSolicitudes(false);
+    }
+    cargarSolicitudes();
+    return () => {
+      activo = false;
+    };
+  }, [campanaSeleccionada, perfil?.organizationId]);
+
+  function handleElegirSolicitud(id: string) {
+    setSolicitudSeleccionada(id);
+    const s = solicitudes.find((x) => x.id === id);
+    if (s) setClienteNombre(s.nombre);
+  }
+
   function limpiar() {
     setClienteNombre("");
     setNumeroDocumento("");
     setServicio("");
     setMonto("");
+    setCampanaSeleccionada("");
+    setSolicitudSeleccionada("");
+    setSolicitudes([]);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -235,6 +305,8 @@ export default function TallerComprobantes() {
         servicio_o_producto: servicio.trim(),
         monto_pagado: montoNum,
         fecha,
+        oferta_solicitud_id: solicitudSeleccionada || null,
+        multiplicador: solicitudSeleccionada ? 3 : null,
       })
       .select("id, cliente_nombre, servicio_o_producto, monto_pagado, estado_envio_puntos, created_at")
       .single();
@@ -274,6 +346,60 @@ export default function TallerComprobantes() {
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         {/* Formulario */}
         <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl border border-black/[0.06] bg-white p-5 shadow-sm">
+          {campanas.length > 0 && (
+            <div className="rounded-xl border border-signal-500/20 bg-signal-500/5 p-4">
+              <div className="flex items-center gap-2">
+                <Megaphone className="h-4 w-4 text-signal-600" />
+                <label className="text-xs font-bold text-foreground">¿Este cliente reservó una campaña especial?</label>
+              </div>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Si el cliente le dio "Me interesa" a una campaña con cupo, elegila acá para asignarle el multiplicador x3.
+              </p>
+              <select
+                value={campanaSeleccionada}
+                onChange={(e) => setCampanaSeleccionada(e.target.value)}
+                className="mt-2.5 h-11 w-full rounded-xl border border-black/10 bg-white px-3.5 text-sm font-medium text-foreground shadow-sm focus:border-signal-500 focus:outline-none focus:ring-4 focus:ring-signal-500/15"
+              >
+                <option value="">No — comprobante normal</option>
+                {campanas.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.titulo}
+                  </option>
+                ))}
+              </select>
+
+              {campanaSeleccionada && (
+                <div className="mt-2.5">
+                  {cargandoSolicitudes ? (
+                    <div className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" /> Buscando clientes que reservaron...
+                    </div>
+                  ) : solicitudes.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">Nadie con reserva pendiente en esta campaña.</p>
+                  ) : (
+                    <select
+                      value={solicitudSeleccionada}
+                      onChange={(e) => handleElegirSolicitud(e.target.value)}
+                      className="h-11 w-full rounded-xl border border-black/10 bg-white px-3.5 text-sm font-medium text-foreground shadow-sm focus:border-signal-500 focus:outline-none focus:ring-4 focus:ring-signal-500/15"
+                    >
+                      <option value="">Elegí el cliente que reservó</option>
+                      {solicitudes.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.nombre} · {s.telefono}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  {solicitudSeleccionada && (
+                    <p className="mt-2 text-[11px] font-semibold text-emerald-700">
+                      Este comprobante quedará enlazado a esa reserva con multiplicador x3.
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <TextField label="Nombre del cliente" icon={User} value={clienteNombre} onChange={setClienteNombre} placeholder="Juan Pérez" accent="signal" required />
             <div>
@@ -331,12 +457,17 @@ export default function TallerComprobantes() {
                 <p><span className="text-muted-foreground">Cliente:</span> {ultimo.cliente_nombre}</p>
                 <p><span className="text-muted-foreground">Servicio/producto:</span> {ultimo.servicio_o_producto}</p>
                 <p><span className="text-muted-foreground">Monto pagado:</span> {formatCOP(ultimo.monto_pagado)}</p>
+                {ultimo.multiplicador === 3 && (
+                  <p><span className="text-muted-foreground">Campaña:</span> <span className="font-bold text-signal-600">Reserva x3 enlazada</span></p>
+                )}
               </div>
               <div className="mt-4 flex items-center justify-between rounded-xl bg-white/70 px-3.5 py-2.5">
                 <span className="flex items-center gap-1.5 text-xs font-bold text-foreground">
                   <Clock className="h-3.5 w-3.5 text-amber-600" /> Puntos
                 </span>
-                <span className="text-[11px] font-bold text-amber-700">Pendiente — se activa con Puntos Neggo</span>
+                <span className="text-[11px] font-bold text-amber-700">
+                  {ultimo.multiplicador === 3 ? "Pendiente x3 — se activa con Puntos Neggo" : "Pendiente — se activa con Puntos Neggo"}
+                </span>
               </div>
             </div>
           ) : (

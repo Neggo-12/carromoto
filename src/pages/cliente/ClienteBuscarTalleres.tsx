@@ -15,6 +15,8 @@ import {
   ChevronRight,
   KeyRound,
   Zap,
+  Megaphone,
+  Trophy,
 } from "lucide-react";
 import { Modal } from "@/components/Modal";
 import { TextField } from "@/components/TextField";
@@ -38,9 +40,22 @@ interface TallerVerificado {
   tipo_vehiculo: "carro" | "moto" | "ambos" | null;
   especialista_electricos: boolean;
   descripcion_negocio: string | null;
+  direccion: string | null;
+  barrio: string | null;
   afiliado_desde: string;
   codigo_publico: string;
   distancia_km?: number;
+}
+
+// Campaña activa de un taller, para el botón "Ver campañas" — mismos campos
+// que ClienteOfertas.tsx lee de campanas, pero acá filtrados por un taller
+// puntual en vez de traer todas las activas del país.
+interface CampanaTaller {
+  id: string;
+  titulo: string;
+  descripcion: string | null;
+  cupo_maximo: number | null;
+  interesados: number;
 }
 
 interface ContactoTaller {
@@ -65,6 +80,87 @@ function tipoVehiculoLabel(t: TallerVerificado["tipo_vehiculo"]) {
   if (t === "moto") return "Moto";
   if (t === "ambos") return "Carro y moto";
   return null;
+}
+
+// ───── Campañas activas de un taller (dentro de la tarjeta) ─────
+
+function CampanasTaller({ tallerId }: { tallerId: string }) {
+  const [abierto, setAbierto] = useState(false);
+  const [cargando, setCargando] = useState(false);
+  const [cargado, setCargado] = useState(false);
+  const [campanas, setCampanas] = useState<CampanaTaller[]>([]);
+
+  async function handleAbrir() {
+    const siguiente = !abierto;
+    setAbierto(siguiente);
+    if (!siguiente || cargado) return;
+    setCargando(true);
+    const { data } = await supabase
+      .from("campanas")
+      .select("id, titulo, descripcion, cupo_maximo")
+      .eq("organization_id", tallerId)
+      .eq("estado", "activa")
+      .order("created_at", { ascending: false });
+    const filas = (data as { id: string; titulo: string; descripcion: string | null; cupo_maximo: number | null }[]) ?? [];
+    const ids = filas.map((c) => c.id);
+    let conteos: Record<string, number> = {};
+    if (ids.length > 0) {
+      const { data: solicitudes } = await supabase.from("oferta_solicitudes").select("campana_id").in("campana_id", ids);
+      conteos = (solicitudes ?? []).reduce<Record<string, number>>((acc, s) => {
+        acc[s.campana_id] = (acc[s.campana_id] ?? 0) + 1;
+        return acc;
+      }, {});
+    }
+    setCampanas(filas.map((c) => ({ ...c, interesados: conteos[c.id] ?? 0 })));
+    setCargando(false);
+    setCargado(true);
+  }
+
+  return (
+    <div className="mt-2 overflow-hidden rounded-lg border border-black/[0.06]">
+      <button
+        type="button"
+        onClick={handleAbrir}
+        className="flex h-9 w-full items-center justify-between gap-2 px-3 text-xs font-bold text-foreground transition-colors hover:bg-black/[0.02]"
+      >
+        <span className="flex items-center gap-1.5">
+          <Megaphone className="h-3.5 w-3.5 text-signal-600" /> Ver campañas activas
+        </span>
+        {abierto ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
+      </button>
+      {abierto && (
+        <div className="space-y-2 border-t border-black/[0.06] p-3">
+          {cargando ? (
+            <div className="flex items-center gap-2 py-2 text-[11px] text-muted-foreground">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Buscando campañas...
+            </div>
+          ) : campanas.length === 0 ? (
+            <p className="text-[11px] text-muted-foreground">Este taller no tiene campañas activas en este momento.</p>
+          ) : (
+            campanas.map((c) => {
+              const porcentaje = c.cupo_maximo ? Math.min(100, Math.round((c.interesados / c.cupo_maximo) * 100)) : null;
+              return (
+                <div key={c.id} className="rounded-lg border border-signal-500/20 bg-signal-500/5 p-2.5">
+                  <p className="text-xs font-bold text-foreground">{c.titulo}</p>
+                  {c.descripcion && <p className="mt-0.5 line-clamp-2 text-[11px] text-muted-foreground">{c.descripcion}</p>}
+                  {porcentaje !== null && (
+                    <div className="mt-1.5">
+                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-black/5">
+                        <div className="h-full rounded-full bg-signal-500" style={{ width: `${porcentaje}%` }} />
+                      </div>
+                      <p className="mt-1 flex items-center gap-1 text-[10px] font-semibold text-signal-700">
+                        <Trophy className="h-3 w-3" /> {porcentaje}% del cupo reservado
+                      </p>
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ───── Tarjeta de resultado ─────
@@ -104,9 +200,12 @@ function TallerCard({ taller, onContactar }: { taller: TallerVerificado; onConta
           {taller.tipo_negocio === "almacen" ? "Repuestos" : "Taller"}
           {tipoVehiculoLabel(taller.tipo_vehiculo) ? ` · ${tipoVehiculoLabel(taller.tipo_vehiculo)}` : ""}
         </p>
-        {taller.ciudad && (
-          <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <MapPin className="h-3 w-3" /> {taller.ciudad}
+        {(taller.direccion || taller.barrio || taller.ciudad) && (
+          <p className="flex items-start gap-1.5 text-xs font-medium text-foreground">
+            <MapPin className="mt-0.5 h-3 w-3 shrink-0 text-brand-600" />
+            <span>
+              {[taller.direccion, taller.barrio, taller.ciudad].filter(Boolean).join(", ")}
+            </span>
           </p>
         )}
         {taller.especialista_electricos && (
@@ -119,12 +218,14 @@ function TallerCard({ taller, onContactar }: { taller: TallerVerificado; onConta
         </p>
       </div>
 
+      <CampanasTaller tallerId={taller.id} />
+
       <button
         type="button"
         onClick={() => onContactar(taller)}
-        className="mt-4 flex h-9 items-center justify-center gap-2 rounded-lg border border-brand-500/20 bg-brand-500/10 text-xs font-bold text-brand-700 transition-colors hover:bg-brand-500/20"
+        className="mt-2 flex h-9 items-center justify-center gap-2 rounded-lg border border-brand-500/20 bg-brand-500/10 text-xs font-bold text-brand-700 transition-colors hover:bg-brand-500/20"
       >
-        <MessageCircle className="h-3.5 w-3.5" /> Contactar
+        <MessageCircle className="h-3.5 w-3.5" /> Contactar al taller
       </button>
     </div>
   );
