@@ -36,6 +36,7 @@ import {
   type Motorizacion,
 } from "@/lib/data";
 import { useAuth } from "@/lib/AuthProvider";
+import { VERSION_TERMINOS, VERSION_TRATAMIENTO_DATOS } from "@/lib/legal";
 
 type TipoVehiculo = "carro" | "moto" | "ambos";
 type TipoNegocio = "taller" | "almacen";
@@ -70,9 +71,11 @@ export default function RegistroTaller() {
   const [servicios, setServicios] = useState<string[]>([]);
 
   const [horario, setHorario] = useState<WeekSchedule>(defaultSchedule());
+  const [aceptoTerminos, setAceptoTerminos] = useState(false);
+  const [aceptoTratamiento, setAceptoTratamiento] = useState(false);
 
   const STEPS = useMemo(
-    () => ["Acceso", "Tu negocio", "Tipo de negocio", tipoNegocio === "almacen" ? "Repuestos" : "Servicios", "Horario", "Listo"],
+    () => ["Acceso", "Su negocio", "Tipo de negocio", tipoNegocio === "almacen" ? "Repuestos" : "Servicios", "Horario", "Listo"],
     [tipoNegocio]
   );
 
@@ -139,35 +142,40 @@ export default function RegistroTaller() {
   function validateStep(): boolean {
     setError("");
     if (step === 0) {
-      if (!nombreEncargado.trim()) return fail("Contanos tu nombre.");
-      if (!/^\S+@\S+\.\S+$/.test(correo)) return fail("Ese correo no se ve válido.");
-      if (celular.replace(/\D/g, "").length < 10) return fail("Escribí el celular completo, con indicativo.");
+      if (!nombreEncargado.trim()) return fail("Indíquenos su nombre.");
+      if (!/^\S+@\S+\.\S+$/.test(correo)) return fail("Ese correo electrónico no parece válido.");
+      if (celular.replace(/\D/g, "").length < 10) return fail("Ingrese el celular completo, con indicativo.");
       if (password.length < 6) return fail("La contraseña necesita al menos 6 caracteres.");
       if (password !== confirmar) return fail("Las contraseñas no coinciden.");
       return true;
     }
     if (step === 1) {
-      if (!nombreNegocio.trim()) return fail("Contanos el nombre de tu negocio.");
-      if (!ciudad.trim()) return fail("Elegí la ciudad.");
-      if (!barrio.trim()) return fail("Contanos el barrio.");
-      if (!direccion.trim()) return fail("Escribí la dirección.");
+      if (!nombreNegocio.trim()) return fail("Indíquenos el nombre de su negocio.");
+      if (!ciudad.trim()) return fail("Seleccione la ciudad.");
+      if (!barrio.trim()) return fail("Indíquenos el barrio.");
+      if (!direccion.trim()) return fail("Ingrese la dirección.");
       return true;
     }
     if (step === 2) {
-      if (!tipoNegocio) return fail("Contanos si sos un taller o un almacén de repuestos.");
-      if (!tipoVehiculo) return fail("Elegí si trabajás con carro, moto o ambos.");
+      if (!tipoNegocio) return fail("Indíquenos si es un taller o un almacén de repuestos.");
+      if (!tipoVehiculo) return fail("Seleccione si trabaja con carro, moto o ambos.");
       if ((tipoVehiculo === "carro" || tipoVehiculo === "ambos") && carroMotorizaciones.length === 0) {
-        return fail(tipoNegocio === "almacen" ? "Elegí qué motorización de carros vendés en repuestos." : "Elegí qué motorización de carros atendés.");
+        return fail(tipoNegocio === "almacen" ? "Seleccione qué motorización de carros vende en repuestos." : "Seleccione qué motorización de carros atiende.");
       }
       if ((tipoVehiculo === "moto" || tipoVehiculo === "ambos") && motoMotorizaciones.length === 0) {
-        return fail(tipoNegocio === "almacen" ? "Elegí qué motorización de motos vendés en repuestos." : "Elegí qué motorización de motos atendés.");
+        return fail(tipoNegocio === "almacen" ? "Seleccione qué motorización de motos vende en repuestos." : "Seleccione qué motorización de motos atiende.");
       }
       return true;
     }
     if (step === 3) {
       if (servicios.length === 0) {
-        return fail(tipoNegocio === "almacen" ? "Elegí al menos un tipo de repuesto que vendés." : "Elegí al menos un servicio que ofrecés.");
+        return fail(tipoNegocio === "almacen" ? "Seleccione al menos un tipo de repuesto que venda." : "Seleccione al menos un servicio que ofrezca.");
       }
+      return true;
+    }
+    if (step === 4) {
+      if (!aceptoTerminos) return fail("Debe aceptar los Términos y Condiciones para continuar.");
+      if (!aceptoTratamiento) return fail("Debe autorizar el tratamiento de sus datos personales para continuar.");
       return true;
     }
     return true;
@@ -196,6 +204,8 @@ export default function RegistroTaller() {
           servicios,
           horario,
         },
+        aceptoTerminosVersion: VERSION_TERMINOS,
+        aceptoTratamientoVersion: VERSION_TRATAMIENTO_DATOS,
       });
       setEnviando(false);
       if (err) return fail(err);
@@ -213,12 +223,12 @@ export default function RegistroTaller() {
       accent="signal"
       icon={Store}
       eyebrow="Registro de Taller"
-      title="Sumá tu taller y ganá el Sello de Confianza"
+      title="Sume su taller y gane el Sello de Confianza"
       subtitle="Cinco minutos hoy, para empezar a recibir clientes que ya saben qué necesitan."
       bullets={[
         "Sello de Confianza verificado, no autodeclarado",
         "Clientes que ya saben qué necesitan",
-        "Vos decidís qué solicitudes atender",
+        "Usted decide qué solicitudes atender",
       ]}
     >
       <div className="rounded-3xl border border-black/[0.06] bg-white p-6 shadow-xl sm:p-9">
@@ -231,11 +241,11 @@ export default function RegistroTaller() {
         <AnimatePresence mode="wait">
           {step === 0 && (
             <motion.div key="0" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.25 }}>
-              <h2 className="text-2xl font-black tracking-tight text-foreground">Creá el acceso de tu taller</h2>
-              <p className="mt-1.5 text-sm text-muted-foreground">Con esto vas a entrar a tu panel más adelante.</p>
+              <h2 className="text-2xl font-black tracking-tight text-foreground">Cree el acceso de su taller</h2>
+              <p className="mt-1.5 text-sm text-muted-foreground">Con esto va a entrar a su panel más adelante.</p>
 
               <div className="mt-6 space-y-4">
-                <TextField label="Tu nombre" icon={Store} value={nombreEncargado} onChange={setNombreEncargado} placeholder="Carlos Ramírez" accent="signal" required />
+                <TextField label="Su nombre" icon={Store} value={nombreEncargado} onChange={setNombreEncargado} placeholder="Carlos Ramírez" accent="signal" required />
                 <TextField label="Correo electrónico" type="email" icon={Mail} value={correo} onChange={setCorreo} placeholder="negocio@ejemplo.com" accent="signal" required />
                 <TextField label="Celular (WhatsApp)" icon={Phone} prefix="+57" value={celular} onChange={setCelular} placeholder="300 123 4567" accent="signal" required />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-3">
@@ -248,8 +258,8 @@ export default function RegistroTaller() {
 
           {step === 1 && (
             <motion.div key="1" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.25 }}>
-              <h2 className="text-2xl font-black tracking-tight text-foreground">Contanos de tu negocio</h2>
-              <p className="mt-1.5 text-sm text-muted-foreground">Así los clientes saben dónde encontrarte.</p>
+              <h2 className="text-2xl font-black tracking-tight text-foreground">Cuéntenos sobre su negocio</h2>
+              <p className="mt-1.5 text-sm text-muted-foreground">Así los clientes saben dónde encontrarlo.</p>
 
               <div className="mt-6 space-y-4">
                 <TextField label="Nombre del negocio" icon={Store} value={nombreNegocio} onChange={setNombreNegocio} placeholder="Taller El Motor Feliz" accent="signal" required />
@@ -263,7 +273,7 @@ export default function RegistroTaller() {
                     accent="signal"
                     creatable
                     required
-                    placeholder={ciudad ? "Empezá a escribir…" : "Primero elegí la ciudad"}
+                    placeholder={ciudad ? "Empiece a escribir…" : "Primero seleccione la ciudad"}
                   />
                 </div>
                 <TextField label="Dirección" icon={MapPin} value={direccion} onChange={setDireccion} placeholder="Cra 45 # 12-30" accent="signal" required />
@@ -273,14 +283,14 @@ export default function RegistroTaller() {
 
           {step === 2 && (
             <motion.div key="2" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.25 }}>
-              <h2 className="text-2xl font-black tracking-tight text-foreground">¿Sos almacén o taller?</h2>
-              <p className="mt-1.5 text-sm text-muted-foreground">Así te mostramos a los clientes correctos.</p>
+              <h2 className="text-2xl font-black tracking-tight text-foreground">¿Es almacén o taller?</h2>
+              <p className="mt-1.5 text-sm text-muted-foreground">Así le mostramos a los clientes correctos.</p>
 
               <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <SelectableCard
                   icon={Wrench}
                   label="Taller de reparación"
-                  description="Hacés mantenimiento y reparaciones."
+                  description="Realiza mantenimiento y reparaciones."
                   selected={tipoNegocio === "taller"}
                   onClick={() => selectTipoNegocio("taller")}
                   accent="signal"
@@ -288,7 +298,7 @@ export default function RegistroTaller() {
                 <SelectableCard
                   icon={Package}
                   label="Almacén de repuestos"
-                  description="Vendés repuestos, no hacés reparaciones."
+                  description="Vende repuestos, no realiza reparaciones."
                   selected={tipoNegocio === "almacen"}
                   onClick={() => selectTipoNegocio("almacen")}
                   accent="signal"
@@ -299,7 +309,7 @@ export default function RegistroTaller() {
                 {tipoNegocio && (
                   <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mt-6 overflow-hidden">
                     <p className="mb-2 text-xs font-bold text-foreground">
-                      {tipoNegocio === "almacen" ? "¿Para qué vehículos vendés repuestos?" : "¿Qué tipo de vehículos atendés?"}
+                      {tipoNegocio === "almacen" ? "¿Para qué vehículos vende repuestos?" : "¿Qué tipo de vehículos atiende?"}
                     </p>
                     <div className="grid grid-cols-3 gap-2 sm:gap-3">
                       <SelectableCard icon={CarFront} label="Carro" selected={tipoVehiculo === "carro"} onClick={() => selectTipoVehiculo("carro")} accent="signal" compact />
@@ -315,9 +325,9 @@ export default function RegistroTaller() {
                   <motion.div key="carro-motorizacion" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mt-5 overflow-hidden">
                     <p className="mb-0.5 text-xs font-bold text-foreground flex items-center gap-1.5">
                       <Zap className="h-3.5 w-3.5 text-signal-600" />
-                      {tipoNegocio === "almacen" ? "¿Para qué motorización de carros vendés repuestos?" : "¿Qué motorización de carros atendés?"}
+                      {tipoNegocio === "almacen" ? "¿Para qué motorización de carros vende repuestos?" : "¿Qué motorización de carros atiende?"}
                     </p>
-                    <p className="mb-2 text-[11px] text-muted-foreground">Elegí todas las que apliquen.</p>
+                    <p className="mb-2 text-[11px] text-muted-foreground">Seleccione todas las que apliquen.</p>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
                       {OPCIONES_MOTORIZACION.map((opt) => (
                         <SelectableCard
@@ -337,9 +347,9 @@ export default function RegistroTaller() {
                   <motion.div key="moto-motorizacion" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mt-5 overflow-hidden">
                     <p className="mb-0.5 text-xs font-bold text-foreground flex items-center gap-1.5">
                       <Zap className="h-3.5 w-3.5 text-signal-600" />
-                      {tipoNegocio === "almacen" ? "¿Para qué motorización de motos vendés repuestos?" : "¿Qué motorización de motos atendés?"}
+                      {tipoNegocio === "almacen" ? "¿Para qué motorización de motos vende repuestos?" : "¿Qué motorización de motos atiende?"}
                     </p>
-                    <p className="mb-2 text-[11px] text-muted-foreground">Elegí todas las que apliquen.</p>
+                    <p className="mb-2 text-[11px] text-muted-foreground">Seleccione todas las que apliquen.</p>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
                       {OPCIONES_MOTORIZACION.map((opt) => (
                         <SelectableCard
@@ -373,12 +383,12 @@ export default function RegistroTaller() {
                       <p className="text-xs text-foreground">
                         {especialistaElectricos ? (
                           <>
-                            <span className="font-bold">Te vamos a destacar como especialista en eléctricos e híbridos.</span>{" "}
-                            Vas a aparecer resaltado para los clientes que busquen justo eso.
+                            <span className="font-bold">Lo destacaremos como especialista en eléctricos e híbridos.</span>{" "}
+                            Aparecerá resaltado para los clientes que busquen justo eso.
                           </>
                         ) : (
                           <>
-                            <span className="font-bold">Vas a aparecer también entre los talleres que atienden eléctricos e híbridos,</span>{" "}
+                            <span className="font-bold">También aparecerá entre los talleres que atienden eléctricos e híbridos,</span>{" "}
                             además de los convencionales.
                           </>
                         )}
@@ -393,9 +403,9 @@ export default function RegistroTaller() {
           {step === 3 && (
             <motion.div key="3" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.25 }}>
               <h2 className="text-2xl font-black tracking-tight text-foreground">
-                {tipoNegocio === "almacen" ? "¿Qué repuestos vendés?" : "¿Qué servicios ofrecés?"}
+                {tipoNegocio === "almacen" ? "¿Qué repuestos vende?" : "¿Qué servicios ofrece?"}
               </h2>
-              <p className="mt-1.5 text-sm text-muted-foreground">Elegí todos los que apliquen.</p>
+              <p className="mt-1.5 text-sm text-muted-foreground">Seleccione todos los que apliquen.</p>
 
               <div className="mt-6 flex flex-wrap gap-2.5">
                 {opcionesDisponibles.map((s) => (
@@ -418,11 +428,44 @@ export default function RegistroTaller() {
 
           {step === 4 && (
             <motion.div key="4" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.25 }}>
-              <h2 className="text-2xl font-black tracking-tight text-foreground">¿Cuándo atendés?</h2>
-              <p className="mt-1.5 text-sm text-muted-foreground">Los clientes van a ver esto antes de escribirte.</p>
+              <h2 className="text-2xl font-black tracking-tight text-foreground">¿Cuándo atiende?</h2>
+              <p className="mt-1.5 text-sm text-muted-foreground">Los clientes verán esto antes de escribirle.</p>
 
               <div className="mt-6">
                 <ScheduleEditor value={horario} onChange={setHorario} accent="signal" />
+              </div>
+
+              <div className="mt-6 space-y-2.5 border-t border-black/[0.06] pt-5">
+                <label className="flex items-start gap-2.5 text-xs text-muted-foreground">
+                  <input
+                    type="checkbox"
+                    checked={aceptoTerminos}
+                    onChange={(e) => setAceptoTerminos(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-black/20"
+                  />
+                  <span>
+                    He leído y acepto los{" "}
+                    <Link to="/legal/terminos" target="_blank" className="font-bold text-signal-600 hover:underline">
+                      Términos y Condiciones
+                    </Link>
+                    .
+                  </span>
+                </label>
+                <label className="flex items-start gap-2.5 text-xs text-muted-foreground">
+                  <input
+                    type="checkbox"
+                    checked={aceptoTratamiento}
+                    onChange={(e) => setAceptoTratamiento(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-black/20"
+                  />
+                  <span>
+                    Autorizo el tratamiento de mis datos personales conforme a la{" "}
+                    <Link to="/legal/privacidad" target="_blank" className="font-bold text-signal-600 hover:underline">
+                      Política de Tratamiento de Datos
+                    </Link>
+                    .
+                  </span>
+                </label>
               </div>
             </motion.div>
           )}
@@ -442,14 +485,14 @@ export default function RegistroTaller() {
               </h2>
               {requiereConfirmacion ? (
                 <p className="mt-2.5 text-sm text-muted-foreground leading-relaxed">
-                  Te mandamos un correo a <span className="font-semibold text-foreground">{correo}</span> para confirmar
-                  tu cuenta — confirmalo y después ya podés iniciar sesión. Tu negocio queda pendiente de aprobación
-                  hasta que verifiquemos tu identidad.
+                  Le enviamos un correo a <span className="font-semibold text-foreground">{correo}</span> para confirmar
+                  su cuenta — confírmelo y luego podrá iniciar sesión. Su negocio queda pendiente de aprobación
+                  hasta que verifiquemos su identidad.
                 </p>
               ) : (
                 <p className="mt-2.5 text-sm text-muted-foreground leading-relaxed">
-                  Ya creamos tu cuenta y guardamos los datos de tu negocio. El siguiente paso es la verificación de
-                  identidad para activar tu Sello de Confianza — te avisamos apenas esté disponible.
+                  Ya creamos su cuenta y guardamos los datos de su negocio. El siguiente paso es la verificación de
+                  identidad para activar su Sello de Confianza — le avisaremos apenas esté disponible.
                 </p>
               )}
               <Link to={requiereConfirmacion ? "/login/taller" : "/portal/taller"} className="mt-7 inline-block">
@@ -484,9 +527,9 @@ export default function RegistroTaller() {
 
         {step === 0 && (
           <p className="mt-6 text-center text-xs text-muted-foreground">
-            ¿Ya tenés cuenta?{" "}
+            ¿Ya tiene una cuenta?{" "}
             <Link to="/login/taller" className="font-bold text-signal-600 hover:underline">
-              Iniciá sesión
+              Inicie sesión
             </Link>
           </p>
         )}

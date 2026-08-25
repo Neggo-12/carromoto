@@ -25,8 +25,8 @@ export default function RecuperarContrasenaCliente() {
       accent="brand"
       icon={UserCircle}
       eyebrow="Recuperar acceso — Cliente"
-      title="Te ayudamos a volver a entrar"
-      subtitle="Te mandamos un enlace a tu correo para que crees una contraseña nueva."
+      title="Le ayudamos a recuperar su acceso"
+      subtitle="Le enviaremos un enlace a su correo para que cree una contraseña nueva."
       bullets={["Enlace de un solo uso", "Válido por tiempo limitado"]}
     >
       <div className="rounded-3xl border border-black/[0.06] bg-white p-7 shadow-xl sm:p-9">
@@ -36,9 +36,9 @@ export default function RecuperarContrasenaCliente() {
               <ArrowLeft className="h-3.5 w-3.5" />
               Volver a iniciar sesión
             </Link>
-            <h2 className="text-2xl font-black tracking-tight text-foreground">¿Olvidaste tu contraseña?</h2>
+            <h2 className="text-2xl font-black tracking-tight text-foreground">¿Olvidó su contraseña?</h2>
             <p className="mt-1.5 text-sm text-muted-foreground">
-              Escribí el correo con el que te registraste y te mandamos cómo recuperarla.
+              Indique el correo con el que se registró y le enviaremos las instrucciones para recuperarla.
             </p>
 
             <form onSubmit={handleSubmit} className="mt-7 space-y-4">
@@ -48,7 +48,7 @@ export default function RecuperarContrasenaCliente() {
                 icon={Mail}
                 value={email}
                 onChange={setEmail}
-                placeholder="tucorreo@ejemplo.com"
+                placeholder="sucorreo@ejemplo.com"
                 accent="brand"
                 required
               />
@@ -66,10 +66,10 @@ export default function RecuperarContrasenaCliente() {
             <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-500/10">
               <MailCheck className="h-8 w-8 text-brand-600" />
             </div>
-            <h2 className="text-2xl font-black tracking-tight text-foreground">Revisá tu correo</h2>
+            <h2 className="text-2xl font-black tracking-tight text-foreground">Revise su correo</h2>
             <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
               Si <span className="font-semibold text-foreground">{email}</span> tiene una cuenta de cliente con nosotros,
-              te va a llegar un enlace para crear una contraseña nueva.
+              le llegará un enlace para crear una contraseña nueva.
             </p>
             <Link to="/login/cliente" className="mt-7 inline-block">
               <Button as="span" variant="outline" size="md">

@@ -51,7 +51,7 @@ export default function LandingTalleres() {
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-signal-500/10 glow-signal">
               <Wrench className="h-5 w-5 text-signal-600" />
             </div>
-            <span className="text-lg font-extrabold tracking-tight text-foreground">Taller Aval</span>
+            <span className="text-lg font-extrabold tracking-tight text-foreground">Tallergo</span>
           </Link>
           <div className="flex items-center gap-2 sm:gap-3">
             <a href="#features" className="hidden lg:inline text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">Beneficios</a>
@@ -89,14 +89,14 @@ export default function LandingTalleres() {
               </div>
 
               <h1 className="text-5xl font-black tracking-tight text-foreground sm:text-6xl lg:text-7xl leading-[0.98]">
-                Ganá visibilidad con el{" "}
+                Gane visibilidad con el{" "}
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-signal-600 to-signal-500">
                   Sello de Confianza
                 </span>
               </h1>
 
               <p className="text-base sm:text-lg text-muted-foreground max-w-xl leading-relaxed">
-                Clientes que ya saben qué necesitan, buscando talleres verificados como el tuyo.
+                Clientes que ya saben qué necesitan, buscando talleres verificados como el suyo.
                 Sin pautar, sin depender de tráfico frío.
               </p>
 
@@ -140,10 +140,10 @@ export default function LandingTalleres() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center mb-14">
             <p className="text-xs uppercase tracking-[0.25em] text-signal-600 font-bold mb-3">
-              ¿Por qué sumarte?
+              ¿Por qué sumarse?
             </p>
             <h2 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight">
-              Todo lo que tu taller necesita para crecer
+              Todo lo que su taller necesita para crecer
             </h2>
           </div>
 
@@ -151,17 +151,17 @@ export default function LandingTalleres() {
             <FeatureItem
               icon={ShieldCheck}
               title="Sello de Confianza"
-              description="Verificación real de identidad y legitimidad de tu negocio. Un distintivo que genera credibilidad inmediata."
+              description="Verificación real de identidad y legitimidad de su negocio. Un distintivo que genera credibilidad inmediata."
             />
             <FeatureItem
               icon={Tag}
               title="Servicios a la medida"
-              description="Elegís exactamente qué servicios ofrecés, para que te lleguen solicitudes que sí podés atender."
+              description="Elija exactamente qué servicios ofrece, para que le lleguen solicitudes que sí pueda atender."
             />
             <FeatureItem
               icon={Zap}
               title="Notificaciones al instante"
-              description="Te enterás apenas llega una solicitud de cliente, sin refrescar ni esperar reportes."
+              description="Se entera apenas llega una solicitud de cliente, sin refrescar ni esperar reportes."
             />
             <FeatureItem
               icon={Users}
@@ -171,12 +171,12 @@ export default function LandingTalleres() {
             <FeatureItem
               icon={ListChecks}
               title="Perfil por especialidad"
-              description="Mecánica general, latonería, eléctrico, llantas, eléctricos e híbridos — tu taller aparece en lo que realmente hacés."
+              description="Mecánica general, latonería, eléctrico, llantas, eléctricos e híbridos — su taller aparece en lo que realmente hace."
             />
             <FeatureItem
               icon={Package}
               title="Repuestos con trazabilidad"
-              description="Publicás tu catálogo o inventario de repuestos con claridad entre lo cotizado y lo entregado."
+              description="Publique su catálogo o inventario de repuestos con claridad entre lo cotizado y lo entregado."
             />
           </div>
         </div>
@@ -198,10 +198,10 @@ export default function LandingTalleres() {
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              { step: "01", title: "Te registrás", desc: "Contás qué hace tu taller o negocio de repuestos: carro, moto o ambos.", icon: Store },
-              { step: "02", title: "Verificamos tu negocio", desc: "Confirmamos identidad y legitimidad antes de activarte en la plataforma.", icon: ShieldCheck },
-              { step: "03", title: "Recibís el Sello", desc: "Tu perfil queda visible con el Sello de Confianza una vez verificado.", icon: TrendingUp },
-              { step: "04", title: "Atendés solicitudes", desc: "Respondés cotizaciones de clientes reales, a tu ritmo y con tus condiciones.", icon: Package },
+              { step: "01", title: "Se registra", desc: "Cuéntenos qué hace su taller o negocio de repuestos: carro, moto o ambos.", icon: Store },
+              { step: "02", title: "Verificamos su negocio", desc: "Confirmamos identidad y legitimidad antes de activarlo en la plataforma.", icon: ShieldCheck },
+              { step: "03", title: "Recibe el Sello", desc: "Su perfil queda visible con el Sello de Confianza una vez verificado.", icon: TrendingUp },
+              { step: "04", title: "Atiende solicitudes", desc: "Responde cotizaciones de clientes reales, a su ritmo y con sus condiciones.", icon: Package },
             ].map((item) => (
               <div
                 key={item.step}
@@ -230,7 +230,7 @@ export default function LandingTalleres() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center mb-14">
             <p className="text-xs uppercase tracking-[0.25em] text-signal-600 font-bold mb-3">
-              ¿Tu negocio aplica?
+              ¿Su negocio aplica?
             </p>
             <h2 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight">
               Carro, moto, eléctricos e híbridos
@@ -262,7 +262,7 @@ export default function LandingTalleres() {
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center mb-14">
             <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground font-bold mb-3">
-              Antes de que preguntes
+              Antes de que pregunte
             </p>
             <h2 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight">
               Las dudas más comunes
@@ -272,15 +272,15 @@ export default function LandingTalleres() {
             {[
               {
                 q: "¿Cómo consigo el Sello de Confianza?",
-                a: "Te registrás, verificamos identidad y legitimidad de tu negocio, y una vez aprobado el Sello queda visible en tu perfil.",
+                a: "Se registra, verificamos identidad y legitimidad de su negocio, y una vez aprobado el Sello queda visible en su perfil.",
               },
               {
                 q: "¿Cuánto cuesta estar en la plataforma?",
-                a: "Todavía estamos definiendo el modelo de precios para este vertical. Por ahora no hay ningún costo ni comisión — te avisamos apenas esté listo.",
+                a: "Todavía estamos definiendo el modelo de precios para este vertical. Por ahora no hay ningún costo ni comisión — le avisamos apenas esté listo.",
               },
               {
                 q: "¿Qué pasa si no quiero atender una solicitud?",
-                a: "Vos decidís qué solicitudes atender. No hay obligación de responder todo lo que llega.",
+                a: "Usted decide qué solicitudes atender. No hay obligación de responder todo lo que llega.",
               },
               {
                 q: "¿Sirve para talleres de moto o solo de carro?",
@@ -308,10 +308,10 @@ export default function LandingTalleres() {
             Registro abierto
           </div>
           <h3 className="text-2xl font-black text-foreground mb-2.5">
-            ¿Listo para hacer crecer tu taller?
+            ¿Listo para hacer crecer su taller?
           </h3>
           <p className="text-sm text-muted-foreground leading-relaxed mb-8">
-            Registrá tu negocio gratis, pasá por verificación y empezá a recibir solicitudes de
+            Registre su negocio gratis, pase por verificación y empiece a recibir solicitudes de
             clientes reales.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
@@ -333,11 +333,13 @@ export default function LandingTalleres() {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <Wrench className="h-4 w-4 text-signal-600" />
-              <span className="text-sm font-bold text-foreground">Taller Aval</span>
-              <span className="text-[10px] text-muted-foreground">— Para Talleres (nombre temporal)</span>
+              <span className="text-sm font-bold text-foreground">Tallergo</span>
+              <span className="text-[10px] text-muted-foreground">— Para Talleres</span>
             </div>
-            <div className="flex items-center gap-6">
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
               <Link to="/clientes" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Busco un taller</Link>
+              <Link to="/legal/terminos" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Términos</Link>
+              <Link to="/legal/privacidad" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Privacidad</Link>
               <Link to="/" className="text-xs text-signal-600 hover:text-signal-400 transition-colors">Inicio</Link>
             </div>
           </div>

@@ -1,5 +1,5 @@
 import { NavLink, Outlet, Link, useNavigate } from "react-router-dom";
-import { LayoutGrid, Store, Users, BarChart3, Wrench, LogOut, ShieldCheck } from "lucide-react";
+import { LayoutGrid, Store, Users, BarChart3, Wrench, LogOut, ShieldCheck, Megaphone } from "lucide-react";
 import { useAuth } from "@/lib/AuthProvider";
 import { cn } from "@/lib/utils";
 
@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { to: "/admin", label: "Resumen", icon: LayoutGrid, end: true },
   { to: "/admin/talleres", label: "Talleres", icon: Store },
   { to: "/admin/clientes", label: "Clientes", icon: Users },
+  { to: "/admin/campanas", label: "Campañas", icon: Megaphone },
   { to: "/admin/servicios", label: "Servicios", icon: BarChart3 },
 ];
 
@@ -34,7 +35,7 @@ export function AdminLayout() {
               <Wrench className="h-4 w-4" />
             </div>
             <div>
-              <div className="text-sm font-extrabold tracking-tight leading-none">Taller Aval</div>
+              <div className="text-sm font-extrabold tracking-tight leading-none">Tallergo</div>
               <div className="text-[10px] text-white/40 font-semibold tracking-wide">Panel administrativo</div>
             </div>
           </Link>
@@ -77,7 +78,7 @@ export function AdminLayout() {
           <div className="flex items-center justify-between px-5 py-3.5 sm:px-8">
             <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
               <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
-              Solo visible para el equipo de Taller Aval
+              Solo visible para el equipo de Tallergo
             </div>
             <button
               type="button"

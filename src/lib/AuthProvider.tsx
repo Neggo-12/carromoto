@@ -4,7 +4,7 @@
 // session/perfil se quedan en null y `cargando` pasa a false enseguida, así
 // que el resto de la app (que hoy corre sobre datos de ejemplo) no se
 // rompe. En cuanto esas dos variables existan, esto empieza a hablar de
-// verdad con el proyecto de Supabase propio de Taller Aval.
+// verdad con el proyecto de Supabase propio de Tallergo.
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
@@ -51,6 +51,14 @@ export interface DatosRegistroCliente {
   vehiculo?: "carro" | "moto" | "ambos";
   carroMotorizacion?: "electrico" | "hibrido" | "combustion" | null;
   motoMotorizacion?: "electrico" | "hibrido" | "combustion" | null;
+  // Versión de cada documento legal que la persona aceptó al marcar su
+  // casilla correspondiente (ver src/lib/legal.ts) — nunca se envían
+  // premarcadas, y son dos consentimientos separados a propósito (aceptar
+  // Términos no es lo mismo que autorizar el tratamiento de datos, ver
+  // legal/README.md). handle_new_user() las guarda como evidencia en
+  // `consentimientos` (0014_consentimientos_legales.sql).
+  aceptoTerminosVersion: string;
+  aceptoTratamientoVersion: string;
 }
 
 export interface DatosRegistroTaller {
@@ -62,6 +70,8 @@ export interface DatosRegistroTaller {
   tipoNegocio: "taller" | "almacen";
   ciudad: string;
   metadata?: Record<string, unknown>; // barrio, dirección, motorizaciones, etc. — ver TallerPerfil
+  aceptoTerminosVersion: string;
+  aceptoTratamientoVersion: string;
 }
 
 interface ResultadoAuth {
@@ -120,9 +130,9 @@ function traducirError(error: { message: string; code?: string }): string {
     case "email_address_invalid":
       return "Ese correo no se ve válido.";
     case "email_not_confirmed":
-      return "Confirmá tu correo antes de iniciar sesión — revisá tu bandeja de entrada.";
+      return "Confirme su correo antes de iniciar sesión — revise su bandeja de entrada.";
     case "over_email_send_rate_limit":
-      return "Muchos intentos seguidos — esperá un minuto y probá de nuevo.";
+      return "Demasiados intentos seguidos — espere un minuto y vuelva a intentarlo.";
     case "signup_disabled":
     case "email_provider_disabled":
       return "El registro por correo está desactivado en este momento.";
@@ -134,7 +144,7 @@ function traducirError(error: { message: string; code?: string }): string {
   if (/already (registered|exists)/i.test(msg)) return "Ya existe una cuenta con ese correo.";
   if (/password/i.test(msg)) return "La contraseña no cumple los requisitos mínimos.";
   if (/invalid[^.]*email|email[^.]*invalid/i.test(msg)) return "Ese correo no se ve válido.";
-  return msg || "Algo salió mal. Intentá de nuevo.";
+  return msg || "Algo salió mal. Intente de nuevo.";
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -239,6 +249,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           vehiculo: datos.vehiculo ?? null,
           carro_motorizacion: datos.carroMotorizacion ?? null,
           moto_motorizacion: datos.motoMotorizacion ?? null,
+          acepto_terminos_version: datos.aceptoTerminosVersion,
+          acepto_tratamiento_version: datos.aceptoTratamientoVersion,
         },
       },
     });
@@ -260,6 +272,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           tipo_negocio: datos.tipoNegocio,
           ciudad: datos.ciudad,
           metadata: datos.metadata ?? {},
+          acepto_terminos_version: datos.aceptoTerminosVersion,
+          acepto_tratamiento_version: datos.aceptoTratamientoVersion,
         },
       },
     });
@@ -274,7 +288,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .from("users")
       .update({ documento_tipo: documentoTipo, documento_numero: documentoNumero })
       .eq("id", session.user.id);
-    if (error) return { error: "No pudimos guardar tu documento. Intentá de nuevo." };
+    if (error) return { error: "No pudimos guardar su documento. Intente de nuevo." };
     setPerfil((prev) => (prev ? { ...prev, documentoTipo, documentoNumero } : prev));
     return { error: null };
   }

@@ -23,7 +23,7 @@ import { useAuth } from "@/lib/AuthProvider";
 import { geocodificarDireccion, guardarBusquedaPendiente, type Coordenadas } from "@/lib/geocoding";
 
 /**
- * Home de CarroMoto / Taller Aval — segunda iteración del rediseño
+ * Home de Tallergo / Tallergo — segunda iteración del rediseño
  * (20/08/2026). Cambio central respecto a la primera versión: la Home
  * pública YA NO carga ni muestra datos reales de talleres — ni en el Hero,
  * ni en resultados de búsqueda. "No basta con ocultar los talleres con
@@ -100,16 +100,16 @@ const SLIDES_CARRUSEL = [
     cuerpo: "Especialidad, experiencia, tipo de vehículo atendido, ubicación y la información disponible sobre el taller.",
   },
   {
-    titulo: "¿Tu vehículo es híbrido o eléctrico?",
-    cuerpo: "No todos los talleres trabajan con el mismo tipo de vehículo. Conoce qué especialidades necesitas antes de elegir.",
+    titulo: "¿Su vehículo es híbrido o eléctrico?",
+    cuerpo: "No todos los talleres trabajan con el mismo tipo de vehículo. Conozca qué especialidades necesita antes de elegir.",
   },
   {
     titulo: "Elegir bien empieza por tener información clara.",
-    cuerpo: "Conocer un taller antes de llevar tu vehículo te ayuda a tomar una decisión con mayor tranquilidad.",
+    cuerpo: "Conocer un taller antes de llevar su vehículo le ayuda a tomar una decisión con mayor tranquilidad.",
   },
   {
-    titulo: "No necesitas saber de mecánica para empezar.",
-    cuerpo: "Tú conoces tu vehículo. Nosotros te ayudamos a encontrar información para elegir dónde llevarlo.",
+    titulo: "No necesita saber de mecánica para empezar.",
+    cuerpo: "Usted conoce su vehículo. Nosotros le ayudamos a encontrar información para elegir dónde llevarlo.",
   },
 ];
 
@@ -228,7 +228,7 @@ function BuscadorDireccion() {
       });
       if (error) {
         setEstado("error");
-        setErrorMsg("No pudimos completar la búsqueda. Intentá de nuevo en un momento.");
+        setErrorMsg("No pudimos completar la búsqueda. Intente de nuevo en un momento.");
         return;
       }
       const n = (data as number | null) ?? 0;
@@ -251,7 +251,7 @@ function BuscadorDireccion() {
     const encontrado = await geocodificarDireccion(direccion);
     if (!encontrado) {
       setEstado("error");
-      setErrorMsg("No pudimos encontrar esa dirección. Verificá que esté completa (calle, número y ciudad) e intentá de nuevo.");
+      setErrorMsg("No pudimos encontrar esa dirección. Verifique que esté completa (calle, número y ciudad) e intente de nuevo.");
       return;
     }
     await ejecutarConteo(encontrado);
@@ -260,7 +260,7 @@ function BuscadorDireccion() {
   function handleUsarUbicacion() {
     if (!("geolocation" in navigator)) {
       setEstado("error");
-      setErrorMsg("Tu navegador no permite compartir tu ubicación. Escribí tu dirección arriba.");
+      setErrorMsg("Su navegador no permite compartir su ubicación. Escriba su dirección arriba.");
       return;
     }
     setUsandoGps(true);
@@ -268,13 +268,13 @@ function BuscadorDireccion() {
     setErrorMsg("");
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
-        setDireccion("Tu ubicación actual");
-        await ejecutarConteo({ lat: pos.coords.latitude, lng: pos.coords.longitude, etiqueta: "tu ubicación actual" });
+        setDireccion("Su ubicación actual");
+        await ejecutarConteo({ lat: pos.coords.latitude, lng: pos.coords.longitude, etiqueta: "su ubicación actual" });
         setUsandoGps(false);
       },
       () => {
         setEstado("error");
-        setErrorMsg("No pudimos acceder a tu ubicación. Escribí tu dirección arriba.");
+        setErrorMsg("No pudimos acceder a su ubicación. Escriba su dirección arriba.");
         setUsandoGps(false);
       },
       { enableHighAccuracy: false, timeout: 10000 }
@@ -304,14 +304,14 @@ function BuscadorDireccion() {
       <form onSubmit={handleBuscar} className="space-y-3">
         <div>
           <label htmlFor="buscador-direccion" className="mb-1.5 block text-[12px] font-bold text-[#374151]">
-            ¿Dónde necesitas encontrar un taller?
+            ¿Dónde necesita encontrar un taller?
           </label>
           <div className="flex h-[54px] items-center gap-2 rounded-[12px] border border-[#D1D5DB] bg-white px-3.5 transition-colors focus-within:border-[#111827]">
             <input
               id="buscador-direccion"
               value={direccion}
               onChange={(e) => setDireccion(e.target.value)}
-              placeholder="Escribe una dirección"
+              placeholder="Escriba una dirección"
               className="h-full flex-1 bg-transparent text-[15px] text-[#111827] placeholder:text-[#9CA3AF] focus:outline-none"
             />
             <MapPin className="h-4.5 w-4.5 shrink-0 text-[#667085]" />
@@ -348,7 +348,7 @@ function BuscadorDireccion() {
         <div className="mt-5 rounded-[14px] border border-[#E4E7EC] bg-[#F8FAFC] p-5 text-center">
           <p className="text-[15px] font-semibold text-[#111827]">
             {conteo} taller{conteo === 1 ? "" : "es"} encontrado{conteo === 1 ? "" : "s"}{" "}
-            {radioUsado === 10 ? "alrededor de tu zona." : `en un radio más amplio (${radioUsado} km).`}
+            {radioUsado === 10 ? "alrededor de su zona." : `en un radio más amplio (${radioUsado} km).`}
           </p>
           <button
             type="button"
@@ -366,7 +366,7 @@ function BuscadorDireccion() {
             Por ahora no tenemos talleres verificados cerca de esa dirección.
           </p>
           <p className="mt-1.5 text-[13px] text-[#667085]">
-            Seguimos sumando cobertura — creá tu cuenta gratis y te avisamos apenas haya opciones cerca tuyo.
+            Seguimos sumando cobertura — cree su cuenta gratis y le avisaremos apenas haya opciones cerca de usted.
           </p>
           <button
             type="button"
@@ -394,9 +394,9 @@ function BuscadorDireccion() {
             >
               <X className="h-4 w-4" />
             </button>
-            <h3 className="mt-2 text-[22px] font-bold tracking-tight text-[#111827]">Ya casi estás.</h3>
+            <h3 className="mt-2 text-[22px] font-bold tracking-tight text-[#111827]">Ya casi está.</h3>
             <p className="mt-2.5 text-[14px] leading-relaxed text-[#667085]">
-              Crea una cuenta para descubrir los talleres disponibles cerca de la dirección que elegiste.
+              Cree una cuenta para descubrir los talleres disponibles cerca de la dirección que eligió.
             </p>
             <div className="mt-6 flex flex-col gap-2.5">
               <Link
@@ -412,7 +412,7 @@ function BuscadorDireccion() {
                 Iniciar sesión
               </Link>
             </div>
-            <p className="mt-5 text-[12px] text-[#667085]">Tu búsqueda se guardará para que puedas continuar donde la dejaste.</p>
+            <p className="mt-5 text-[12px] text-[#667085]">Su búsqueda se guardará para que pueda continuar donde la dejó.</p>
           </div>
         </div>
       )}
@@ -429,7 +429,7 @@ export default function LandingHub() {
   const [menuAbierto, setMenuAbierto] = useState(false);
 
   useEffect(() => {
-    document.title = "Taller Aval — Encuentra talleres verificados para tu carro o moto";
+    document.title = "Tallergo — Encuentre talleres verificados para su carro o moto";
     let meta = document.querySelector('meta[name="description"]');
     if (!meta) {
       meta = document.createElement("meta");
@@ -438,7 +438,7 @@ export default function LandingHub() {
     }
     meta.setAttribute(
       "content",
-      "Encontrá talleres verificados cerca tuyo para tu carro o moto. Buscá por dirección, compará opciones y elegí con información clara antes de llevar tu vehículo."
+      "Encuentre talleres verificados cerca de usted para su carro o moto. Busque por dirección, compare opciones y elija con información clara antes de llevar su vehículo."
     );
   }, []);
 
@@ -461,7 +461,7 @@ export default function LandingHub() {
             <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#F3F4F6]">
               <Wrench className="h-4.5 w-4.5 text-[#111827]" />
             </div>
-            <span className="text-[16px] font-bold tracking-tight text-[#111827]">Taller Aval</span>
+            <span className="text-[16px] font-bold tracking-tight text-[#111827]">Tallergo</span>
           </Link>
 
           <nav className="hidden items-center gap-8 lg:flex">
@@ -565,10 +565,10 @@ export default function LandingHub() {
             </div>
 
             <h1 className="max-w-[650px] text-[38px] font-bold leading-[1.08] text-[#111827] sm:text-[48px] sm:leading-[1.08] lg:text-[64px] lg:leading-[1.05] lg:tracking-[-2.5px]">
-              Tu vehículo merece algo más que un taller al azar.
+              Su vehículo merece algo más que un taller al azar.
             </h1>
             <p className="mt-6 max-w-[550px] text-[18px] font-normal leading-[1.55] text-[#4B5563] sm:text-[20px]">
-              Encuentra talleres verificados y elige con información clara antes de entregar tu carro o moto.
+              Encuentre talleres verificados y elija con información clara antes de entregar su carro o moto.
             </p>
 
             <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
@@ -627,7 +627,7 @@ export default function LandingHub() {
               Elegir un taller no debería ser cuestión de suerte.
             </h2>
             <p className="mt-4 text-[16px] leading-[1.6] text-[#4B5563] sm:text-[18px]">
-              Cuando tu vehículo necesita atención, muchas veces la parte más difícil no es saber qué reparar. Es
+              Cuando su vehículo necesita atención, muchas veces la parte más difícil no es saber qué reparar. Es
               saber en quién confiar.
             </p>
           </div>
@@ -648,10 +648,10 @@ export default function LandingHub() {
       <section className="bg-[#111827]">
         <div className="mx-auto max-w-[1200px] px-5 py-16 text-center sm:px-8 sm:py-24">
           <h2 className="mx-auto max-w-3xl text-[28px] font-bold leading-tight text-white sm:text-[42px]">
-            No tienes que saber de mecánica para elegir bien dónde llevar tu vehículo.
+            No tiene que saber de mecánica para elegir bien dónde llevar su vehículo.
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-[16px] leading-relaxed text-white/70 sm:text-[18px]">
-            Taller Aval te ayuda a descubrir talleres y conocer mejor tus opciones antes de tomar una decisión.
+            Tallergo le ayuda a descubrir talleres y conocer mejor sus opciones antes de tomar una decisión.
           </p>
           <div className="mt-9">
             <CtaPrimario href="#buscador" invertido>
@@ -667,18 +667,18 @@ export default function LandingHub() {
       <section id="como-funciona" className="bg-white">
         <div className="mx-auto max-w-[1200px] px-5 py-16 sm:px-8 sm:py-24">
           <div className="mx-auto max-w-xl text-center">
-            <h2 className="text-[28px] font-bold text-[#111827] sm:text-[42px]">Así de fácil puedes encontrar un taller.</h2>
+            <h2 className="text-[28px] font-bold text-[#111827] sm:text-[42px]">Así de fácil puede encontrar un taller.</h2>
             <p className="mt-3 text-[16px] text-[#667085] sm:text-[18px]">
-              Te ayudamos a pasar de la incertidumbre a una decisión más clara.
+              Le ayudamos a pasar de la incertidumbre a una decisión más clara.
             </p>
           </div>
 
           <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              { n: "01", t: "Cuéntanos qué vehículo tienes", d: "Selecciona si tienes carro, moto, híbrido o eléctrico." },
-              { n: "02", t: "Encuentra talleres adecuados", d: "Explora talleres según tu ubicación, necesidades y tipo de vehículo." },
-              { n: "03", t: "Conoce tus opciones", d: "Revisa información importante del taller antes de tomar una decisión." },
-              { n: "04", t: "Elige con mayor tranquilidad", d: "Contacta o visita el taller que consideres adecuado para tu vehículo." },
+              { n: "01", t: "Cuéntenos qué vehículo tiene", d: "Seleccione si tiene carro, moto, híbrido o eléctrico." },
+              { n: "02", t: "Encuentre talleres adecuados", d: "Explore talleres según su ubicación, necesidades y tipo de vehículo." },
+              { n: "03", t: "Conozca sus opciones", d: "Revise información importante del taller antes de tomar una decisión." },
+              { n: "04", t: "Elija con mayor tranquilidad", d: "Contacte o visite el taller que considere adecuado para su vehículo." },
             ].map((paso) => (
               <div key={paso.n}>
                 <div className="text-[40px] font-extrabold leading-none text-[#D1D5DB]">{paso.n}</div>
@@ -728,7 +728,7 @@ export default function LandingHub() {
         <div className="mx-auto max-w-[1200px] px-5 py-16 sm:px-8 sm:py-24">
           <div className="mx-auto max-w-xl text-center">
             <h2 className="text-[28px] font-bold text-[#111827] sm:text-[42px]">Cada vehículo necesita el taller adecuado.</h2>
-            <p className="mt-3 text-[16px] text-[#667085] sm:text-[18px]">Encuentra opciones para el vehículo que tienes.</p>
+            <p className="mt-3 text-[16px] text-[#667085] sm:text-[18px]">Encuentre opciones para el vehículo que tiene.</p>
           </div>
 
           <div className="mt-12 grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -757,9 +757,9 @@ export default function LandingHub() {
       <section id="buscador" className="bg-[#F8FAFC]">
         <div className="mx-auto max-w-[1200px] px-5 py-16 sm:px-8 sm:py-24">
           <div className="mx-auto max-w-xl text-center">
-            <h2 className="text-[28px] font-bold text-[#111827] sm:text-[42px]">Encuentra talleres cerca de la dirección que elijas.</h2>
+            <h2 className="text-[28px] font-bold text-[#111827] sm:text-[42px]">Encuentre talleres cerca de la dirección que elija.</h2>
             <p className="mt-3 text-[16px] text-[#667085] sm:text-[18px]">
-              Escribe una dirección y te mostraremos opciones de talleres según esa ubicación.
+              Escriba una dirección y le mostraremos opciones de talleres según esa ubicación.
             </p>
           </div>
 
@@ -782,10 +782,10 @@ export default function LandingHub() {
       <section className="bg-[#111827]">
         <div className="mx-auto max-w-[1200px] px-5 py-16 text-center sm:px-8 sm:py-24">
           <h2 className="mx-auto max-w-2xl text-[28px] font-bold leading-tight text-white sm:text-[42px]">
-            Encuentra un taller con el que puedas sentirte tranquilo.
+            Encuentre un taller con el que pueda sentirse tranquilo.
           </h2>
           <p className="mx-auto mt-4 max-w-lg text-[16px] leading-relaxed text-white/70 sm:text-[18px]">
-            Empieza a buscar y conoce tus opciones antes de tomar una decisión.
+            Empiece a buscar y conozca sus opciones antes de tomar una decisión.
           </p>
           <div className="mt-9">
             <CtaPrimario href="#buscador" invertido>
@@ -804,7 +804,7 @@ export default function LandingHub() {
             <div>
               <div className="flex items-center gap-2">
                 <Wrench className="h-4 w-4 text-white" />
-                <span className="text-[15px] font-bold text-white">CarroMoto</span>
+                <span className="text-[15px] font-bold text-white">Tallergo</span>
               </div>
               <ul className="mt-4 space-y-2.5">
                 <li>
@@ -861,14 +861,22 @@ export default function LandingHub() {
               <ul className="mt-4 space-y-2.5">
                 <li className="text-[13px] text-[#9CA3AF]">Preguntas frecuentes</li>
                 <li className="text-[13px] text-[#9CA3AF]">Contacto</li>
-                <li className="text-[13px] text-[#9CA3AF]">Términos</li>
-                <li className="text-[13px] text-[#9CA3AF]">Privacidad</li>
+                <li>
+                  <Link to="/legal/terminos" className="text-[13px] text-[#9CA3AF] hover:text-white transition-colors">
+                    Términos
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/legal/privacidad" className="text-[13px] text-[#9CA3AF] hover:text-white transition-colors">
+                    Privacidad
+                  </Link>
+                </li>
               </ul>
             </div>
           </div>
 
           <div className="mt-12 border-t border-white/10 pt-6 text-center">
-            <p className="text-[11px] text-[#9CA3AF]/60">&copy; 2026 CarroMoto / Taller Aval. Proyecto en construcción.</p>
+            <p className="text-[11px] text-[#9CA3AF]/60">&copy; 2026 Tallergo. Proyecto en construcción.</p>
           </div>
         </div>
       </footer>

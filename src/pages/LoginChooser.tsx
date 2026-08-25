@@ -58,7 +58,7 @@ export default function LoginChooser() {
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-500/10">
               <Wrench className="h-5 w-5 text-brand-600" />
             </div>
-            <span className="text-lg font-extrabold tracking-tight text-foreground">Taller Aval</span>
+            <span className="text-lg font-extrabold tracking-tight text-foreground">Tallergo</span>
           </Link>
         </div>
       </header>
@@ -67,7 +67,7 @@ export default function LoginChooser() {
         <div className="w-full max-w-2xl">
           <div className="text-center mb-10">
             <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground">
-              ¿Cómo querés iniciar sesión?
+              ¿Cómo desea iniciar sesión?
             </h1>
             <p className="mt-3 text-sm sm:text-base text-muted-foreground">
               Clientes y talleres tienen accesos separados, para que cada uno vea solo lo suyo.

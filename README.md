@@ -1,4 +1,4 @@
-# CarroMoto (nombre temporal)
+# Tallergo
 
 Marketplace de talleres y repuestos de carro/moto verificados — producto nuevo y separado de Neggo, mismo modelo de negocio aplicado a un solo vertical. Ver brief completo del proyecto para contexto de negocio.
 
@@ -38,4 +38,4 @@ React + TypeScript + Vite + Tailwind CSS + react-router-dom + lucide-react. Mism
 
 ## Nombre
 
-"CarroMoto" es un placeholder — nombre real por definir. Aparece marcado como "nombre temporal" en el header y footer de la landing para que sea obvio que no es la marca final.
+La marca comercial del producto es "Tallergo".

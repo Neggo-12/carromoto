@@ -139,7 +139,7 @@ export default function AdminTalleres() {
       <div className="mb-6">
         <h1 className="text-2xl font-black tracking-tight text-slate-900">Talleres registrados</h1>
         <p className="mt-1 text-sm text-slate-500">
-          Aprobá un taller para que pueda iniciar sesión, y activá su Sello de Confianza para que aparezca en Buscar
+          Apruebe un taller para que pueda iniciar sesión, y active su Sello de Confianza para que aparezca en Buscar
           Talleres.
         </p>
       </div>

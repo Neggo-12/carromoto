@@ -54,7 +54,7 @@ export default function LandingClientes() {
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-500/10 glow-brand">
               <Wrench className="h-5 w-5 text-brand-600" />
             </div>
-            <span className="text-lg font-extrabold tracking-tight text-foreground">Taller Aval</span>
+            <span className="text-lg font-extrabold tracking-tight text-foreground">Tallergo</span>
           </Link>
           <div className="flex items-center gap-2 sm:gap-3">
             <a href="#como-funciona" className="hidden lg:inline text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">Cómo funciona</a>
@@ -88,16 +88,16 @@ export default function LandingClientes() {
               </div>
 
               <h1 className="text-5xl font-black tracking-tight text-foreground sm:text-6xl lg:text-7xl leading-[0.98]">
-                Encontrá un{" "}
+                Encuentre un{" "}
                 <span className="inline-block text-white bg-brand-500 px-2 -rotate-1 rounded-md">
                   taller de confianza
                 </span>{" "}
-                sin jugártela a la suerte
+                sin dejarlo a la suerte
               </h1>
 
               <p className="text-base sm:text-lg text-muted-foreground max-w-xl leading-relaxed">
-                Talleres y repuestos verificados antes de que hables con nadie. Contás qué le pasa
-                a tu vehículo, comparás cotizaciones reales y decidís vos, sin presión.
+                Talleres y repuestos verificados antes de que hable con nadie. Cuéntenos qué le pasa
+                a su vehículo, compare cotizaciones reales y decida usted, sin presión.
               </p>
 
               <div className="flex flex-wrap gap-3">
@@ -141,15 +141,15 @@ export default function LandingClientes() {
               Simple y directo
             </p>
             <h2 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight">
-              Encontrá el taller correcto en 3 pasos
+              Encuentre el taller correcto en 3 pasos
             </h2>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 max-w-3xl mx-auto">
             {[
-              { step: "01", title: "Contás qué necesitás", desc: "Tipo de vehículo, servicio o repuesto — sin trámites ni papeleo.", icon: Search },
-              { step: "02", title: "Verificamos el taller", desc: "Confirmamos identidad y legitimidad antes de mostrártelo como opción.", icon: ShieldCheck },
-              { step: "03", title: "Comparás y decidís", desc: "Recibís cotizaciones reales de talleres verificados y elegís con quién avanzar.", icon: Gauge },
+              { step: "01", title: "Cuéntenos qué necesita", desc: "Tipo de vehículo, servicio o repuesto — sin trámites ni papeleo.", icon: Search },
+              { step: "02", title: "Verificamos el taller", desc: "Confirmamos identidad y legitimidad antes de mostrárselo como opción.", icon: ShieldCheck },
+              { step: "03", title: "Compare y decida", desc: "Recibe cotizaciones reales de talleres verificados y elige con quién avanzar.", icon: Gauge },
             ].map((item) => (
               <div
                 key={item.step}
@@ -178,10 +178,10 @@ export default function LandingClientes() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center mb-14">
             <p className="text-xs uppercase tracking-[0.25em] text-brand-600 font-bold mb-3">
-              ¿Por qué buscar acá?
+              ¿Por qué buscar aquí?
             </p>
             <h2 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight">
-              Tu vehículo, en manos de confianza
+              Su vehículo, en manos de confianza
             </h2>
           </div>
 
@@ -194,12 +194,12 @@ export default function LandingClientes() {
             <FeatureItem
               icon={LayoutGrid}
               title="Cotizaciones comparadas"
-              description="Recibís propuestas de más de un taller para el mismo trabajo, y comparás antes de decidir."
+              description="Recibe propuestas de más de un taller para el mismo trabajo, y compara antes de decidir."
             />
             <FeatureItem
               icon={Shield}
               title="Sin sobrecostos escondidos"
-              description="La cotización es el punto de partida. Cualquier cambio se te informa antes de autorizar el trabajo."
+              description="La cotización es el punto de partida. Cualquier cambio se le informa antes de autorizar el trabajo."
             />
             <FeatureItem
               icon={Car}
@@ -209,12 +209,12 @@ export default function LandingClientes() {
             <FeatureItem
               icon={Star}
               title="Repuestos con trazabilidad"
-              description="El repuesto que te cotizan es el que te instalan — sin sustitutos de última hora sin avisar."
+              description="El repuesto que le cotizan es el que le instalan — sin sustitutos de última hora sin avisar."
             />
             <FeatureItem
               icon={MessageSquareOff}
               title="Sin spam"
-              description="Vos decidís a qué taller le compartís tus datos. Sin llamadas ni mensajes no solicitados."
+              description="Usted decide a qué taller le comparte sus datos. Sin llamadas ni mensajes no solicitados."
             />
           </div>
         </div>
@@ -230,7 +230,7 @@ export default function LandingClientes() {
               Cobertura
             </p>
             <h2 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight">
-              ¿Qué estás buscando?
+              ¿Qué está buscando?
             </h2>
           </div>
 
@@ -272,10 +272,10 @@ export default function LandingClientes() {
               <Sparkles className="h-8 w-8 text-brand-600" />
             </div>
             <h3 className="text-2xl font-black text-foreground mb-2.5">
-              ¿Listo para encontrar tu taller?
+              ¿Listo para encontrar su taller?
             </h3>
             <p className="text-sm text-muted-foreground leading-relaxed mb-8">
-              Creá tu cuenta gratis y empezá a comparar talleres y repuestos verificados.
+              Cree su cuenta gratis y empiece a comparar talleres y repuestos verificados.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3">
               <Button as={Link} to="/registro/cliente" variant="brand" size="lg" icon={ArrowRight}>
@@ -297,11 +297,13 @@ export default function LandingClientes() {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <Wrench className="h-4 w-4 text-brand-600" />
-              <span className="text-sm font-bold text-foreground">Taller Aval</span>
-              <span className="text-[10px] text-muted-foreground">— Para Clientes (nombre temporal)</span>
+              <span className="text-sm font-bold text-foreground">Tallergo</span>
+              <span className="text-[10px] text-muted-foreground">— Para Clientes</span>
             </div>
-            <div className="flex items-center gap-6">
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
               <Link to="/talleres" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Tengo un taller</Link>
+              <Link to="/legal/terminos" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Términos</Link>
+              <Link to="/legal/privacidad" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Privacidad</Link>
               <Link to="/" className="text-xs text-brand-600 hover:text-brand-400 transition-colors">Inicio</Link>
             </div>
           </div>

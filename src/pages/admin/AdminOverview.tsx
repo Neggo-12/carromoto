@@ -83,7 +83,7 @@ export default function AdminOverview() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatTile label="Talleres aprobados" value={String(aprobados.length)} icon={Store} accent="emerald" hint={`${talleres.length} registrados en total`} />
-        <StatTile label="Pendientes de aprobación" value={String(pendientes.length)} icon={Clock} accent="amber" hint="Requieren tu revisión" />
+        <StatTile label="Pendientes de aprobación" value={String(pendientes.length)} icon={Clock} accent="amber" hint="Requieren su revisión" />
         <StatTile label="Clientes registrados" value={String(clientesCount)} icon={Users} accent="brand" />
         <StatTile label="Con Sello de Confianza activo" value={String(conSello.length)} icon={ShieldCheck} accent="slate" />
       </div>
@@ -96,7 +96,7 @@ export default function AdminOverview() {
       {pendientes.length > 0 && (
         <div className="mt-8">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-black text-slate-900">Talleres esperando tu aprobación</h2>
+            <h2 className="text-sm font-black text-slate-900">Talleres esperando su aprobación</h2>
             <Link to="/admin/talleres" className="flex items-center gap-1 text-xs font-bold text-brand-600 hover:underline">
               Ver todos <ArrowRight className="h-3 w-3" />
             </Link>

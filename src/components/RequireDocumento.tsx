@@ -40,7 +40,7 @@ export function RequireDocumento({ children }: { children: React.ReactNode }) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!numero.trim()) {
-      setError("Ingresá tu número de documento.");
+      setError("Ingrese su número de documento.");
       return;
     }
     setEnviando(true);
@@ -55,7 +55,7 @@ export function RequireDocumento({ children }: { children: React.ReactNode }) {
       <div className="w-full max-w-md rounded-[20px] border border-[#E4E7EC] bg-white p-7 shadow-2xl">
         <h2 className="text-[18px] font-black tracking-tight text-[#111827]">Necesitamos un dato más</h2>
         <p className="mt-1.5 text-[14px] leading-relaxed text-[#667085]">
-          Para continuar, contanos tu tipo y número de documento. Te lo pedimos una sola vez.
+          Para continuar, indíquenos su tipo y número de documento. Se lo solicitamos una sola vez.
         </p>
 
         <form onSubmit={handleSubmit} className="mt-5 space-y-3.5">

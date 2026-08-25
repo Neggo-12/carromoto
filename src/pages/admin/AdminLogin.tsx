@@ -54,7 +54,7 @@ export default function AdminLogin() {
       setEnviando(false);
       setIntentoLogin(false);
       setUserIdEsperado(null);
-      setError("No se pudo cargar tu sesión. Intentá de nuevo.");
+      setError("No se pudo cargar su sesión. Intente de nuevo.");
     }, 8000);
     return () => clearTimeout(timeout);
   }, [intentoLogin, userIdEsperado, session, perfil]);
@@ -66,7 +66,7 @@ export default function AdminLogin() {
     const { error: err, userId } = await iniciarSesion(email, password);
     if (err || !userId) {
       setEnviando(false);
-      setError(err ?? "No se pudo iniciar sesión. Intentá de nuevo.");
+      setError(err ?? "No se pudo iniciar sesión. Intente de nuevo.");
       return;
     }
     setUserIdEsperado(userId);
@@ -80,7 +80,7 @@ export default function AdminLogin() {
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10">
             <Wrench className="h-5 w-5 text-white" />
           </div>
-          <span className="text-base font-extrabold tracking-tight text-white">Taller Aval</span>
+          <span className="text-base font-extrabold tracking-tight text-white">Tallergo</span>
         </div>
 
         <div className="rounded-3xl border border-black/[0.06] bg-white p-7 shadow-2xl sm:p-8">
@@ -88,7 +88,7 @@ export default function AdminLogin() {
             <ShieldCheck className="h-3.5 w-3.5" />
             Acceso administrativo
           </div>
-          <h1 className="text-xl font-black tracking-tight text-foreground">Panel del equipo Taller Aval</h1>
+          <h1 className="text-xl font-black tracking-tight text-foreground">Panel del equipo Tallergo</h1>
           <p className="mt-1.5 text-sm text-muted-foreground">Solo para administradores de la plataforma.</p>
 
           {avisoRolIncorrecto && (

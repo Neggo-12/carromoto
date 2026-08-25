@@ -36,12 +36,12 @@ export function RequireTallerAprobado({ children }: { children: ReactNode }) {
           {rechazado ? <ShieldX className="h-7 w-7 text-red-600" /> : <Clock className="h-7 w-7 text-amber-600" />}
         </div>
         <h1 className="text-xl font-black tracking-tight text-foreground">
-          {rechazado ? "Tu registro fue rechazado" : "Tu taller está en revisión"}
+          {rechazado ? "Su registro fue rechazado" : "Su taller está en revisión"}
         </h1>
         <p className="mt-2.5 text-sm text-muted-foreground leading-relaxed">
           {rechazado
-            ? "El equipo de Taller Aval revisó tu registro y no fue aprobado esta vez. Si creés que es un error, escribinos y lo revisamos de nuevo."
-            : "El equipo de Taller Aval está verificando tu negocio antes de darte acceso al panel. Te avisamos a tu correo apenas quede aprobado — normalmente toma poco tiempo."}
+            ? "El equipo de Tallergo revisó su registro y no fue aprobado esta vez. Si considera que se trata de un error, contáctenos y lo revisaremos de nuevo."
+            : "El equipo de Tallergo está verificando su negocio antes de otorgarle acceso al panel. Le avisaremos a su correo apenas quede aprobado; normalmente toma poco tiempo."}
         </p>
         <button
           type="button"
@@ -51,7 +51,7 @@ export function RequireTallerAprobado({ children }: { children: ReactNode }) {
           <LogOut className="h-3.5 w-3.5" /> Cerrar sesión
         </button>
         <p className="mt-4 text-[11px] text-muted-foreground">
-          ¿Sos cliente y buscás un taller?{" "}
+          ¿Es cliente y busca un taller?{" "}
           <Link to="/clientes" className="font-semibold text-brand-600 hover:underline">
             Volver al inicio
           </Link>

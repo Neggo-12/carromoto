@@ -59,8 +59,7 @@ export function AuthLayout({
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 backdrop-blur">
               <Wrench className="h-5 w-5" />
             </div>
-            <span className="text-base font-extrabold tracking-tight">Taller Aval</span>
-            <span className="text-[9px] uppercase tracking-[0.15em] text-white/50 font-semibold">nombre temporal</span>
+            <span className="text-base font-extrabold tracking-tight">Tallergo</span>
           </Link>
 
           <motion.div
@@ -92,7 +91,7 @@ export function AuthLayout({
           </motion.div>
 
           <p className="hidden text-[11px] text-white/40 lg:block">
-            &copy; 2026 Taller Aval — proyecto en construcción.
+            &copy; 2026 Tallergo — proyecto en construcción.
           </p>
         </div>
       </div>

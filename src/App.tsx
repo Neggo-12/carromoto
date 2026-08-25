@@ -19,6 +19,7 @@ import AdminOverview from "./pages/admin/AdminOverview";
 import AdminTalleres from "./pages/admin/AdminTalleres";
 import AdminClientes from "./pages/admin/AdminClientes";
 import AdminServicios from "./pages/admin/AdminServicios";
+import AdminCampanas from "./pages/admin/AdminCampanas";
 import { ClientePortalLayout } from "./components/cliente/ClientePortalLayout";
 import ClienteInicio from "./pages/cliente/ClienteInicio";
 import ClienteOfertas from "./pages/cliente/ClienteOfertas";
@@ -32,6 +33,8 @@ import TallerSolicitudes from "./pages/taller/TallerSolicitudes";
 import TallerOfertas from "./pages/taller/TallerOfertas";
 import TallerScore from "./pages/taller/TallerScore";
 import TallerComprobantes from "./pages/taller/TallerComprobantes";
+import Terminos from "./pages/legal/Terminos";
+import Privacidad from "./pages/legal/Privacidad";
 
 export default function App() {
   return (
@@ -53,6 +56,11 @@ export default function App() {
 
           <Route path="/registro/cliente" element={<RegistroCliente />} />
           <Route path="/registro/taller" element={<RegistroTaller />} />
+
+          {/* Legal — públicas, sin login, enlazadas desde el registro y el
+              footer de las landing pages. */}
+          <Route path="/legal/terminos" element={<Terminos />} />
+          <Route path="/legal/privacidad" element={<Privacidad />} />
 
           {/* Portal de Cliente — Ofertas, Buscar Talleres y Puntos. Protegido
               con sesión real de Supabase en cuanto esté configurado; hasta
@@ -113,6 +121,7 @@ export default function App() {
             <Route index element={<AdminOverview />} />
             <Route path="talleres" element={<AdminTalleres />} />
             <Route path="clientes" element={<AdminClientes />} />
+            <Route path="campanas" element={<AdminCampanas />} />
             <Route path="servicios" element={<AdminServicios />} />
           </Route>
         </Routes>

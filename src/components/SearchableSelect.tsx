@@ -27,13 +27,13 @@ const accentText: Record<"brand" | "signal", string> = {
 
 /**
  * Combobox con búsqueda — reemplaza el <select> plano por algo que se
- * siente premium: escribís, filtra en vivo, elegís con mouse o teclado.
+ * siente premium: se escribe, filtra en vivo, se elige con mouse o teclado.
  * `creatable` permite quedarse con texto libre (barrio) cuando no hay
  * coincidencia exacta en la lista de sugerencias.
  */
 export function SearchableSelect({
   label,
-  placeholder = "Escribí para buscar…",
+  placeholder = "Escriba para buscar…",
   value,
   onChange,
   options,

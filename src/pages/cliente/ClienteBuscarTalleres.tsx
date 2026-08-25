@@ -183,7 +183,7 @@ function TallerCard({ taller, onContactar }: { taller: TallerVerificado; onConta
           )}
           <span
             className="text-[10px] font-mono text-muted-foreground/60"
-            title="Código único — confírmalo con el taller para verificar su identidad"
+            title="Código único — confírmelo con el taller para verificar su identidad"
           >
             {taller.codigo_publico}
           </span>
@@ -277,7 +277,7 @@ function ContactarDialog({
     });
     if (err || !data) {
       setEstado("idle");
-      setError("No pudimos enviar tu solicitud. Intentá de nuevo.");
+      setError("No pudimos enviar su solicitud. Intente de nuevo.");
       return;
     }
     const { data: fila } = await supabase
@@ -295,7 +295,7 @@ function ContactarDialog({
       open={taller !== null}
       onClose={resetAndClose}
       title={`Contactar a ${taller?.name ?? ""}`}
-      description="Cuéntale al taller qué necesitas — te contactará directo a tu teléfono."
+      description="Cuéntele al taller qué necesita — se pondrá en contacto directamente a su teléfono."
     >
       {estado === "done" && codigo ? (
         <div className="flex flex-col items-center space-y-4 text-center">
@@ -305,13 +305,13 @@ function ContactarDialog({
           <div>
             <p className="text-sm font-bold text-foreground">Solicitud enviada</p>
             <p className="mt-1 max-w-xs text-xs text-muted-foreground">
-              {taller?.name} recibió tus datos y te va a contactar por WhatsApp.
+              {taller?.name} recibió sus datos y se pondrá en contacto por WhatsApp.
             </p>
           </div>
 
           <div className="w-full space-y-2 rounded-xl border border-brand-500/20 bg-brand-500/5 p-4">
             <p className="flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-brand-700">
-              <KeyRound className="h-3 w-3" /> Tu código de verificación
+              <KeyRound className="h-3 w-3" /> Su código de verificación
             </p>
             <p className="text-2xl font-black font-mono tracking-widest text-foreground">{codigo}</p>
           </div>
@@ -319,14 +319,14 @@ function ContactarDialog({
           <div className="flex w-full gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 text-left">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
             <p className="text-xs leading-relaxed text-amber-800">
-              Cuando {taller?.name} te escriba, debe decirte este código:{" "}
-              <span className="font-mono font-bold">{codigo}</span>. Si no coincide, o te piden plata o datos antes
-              de decírtelo, no sigas.
+              Cuando {taller?.name} le escriba, debe indicarle este código:{" "}
+              <span className="font-mono font-bold">{codigo}</span>. Si no coincide, o le piden dinero o datos antes
+              de indicárselo, no continúe.
             </p>
           </div>
 
           <p className="text-[11px] text-muted-foreground/70">
-            Puedes volver a ver este código en "Mis Solicitudes", más abajo.
+            Puede volver a ver este código en "Mis Solicitudes", más abajo.
           </p>
 
           <button
@@ -340,7 +340,7 @@ function ContactarDialog({
       ) : (
         <div className="space-y-4">
           <TextareaField
-            label="¿Qué necesitas?"
+            label="¿Qué necesita?"
             value={descripcion}
             onChange={setDescripcion}
             placeholder="Ej: quiero saber si tienen disponibilidad para..."
@@ -353,7 +353,7 @@ function ContactarDialog({
             label="WhatsApp (opcional, si es distinto)"
             value={whatsapp}
             onChange={setWhatsapp}
-            placeholder="Si prefieres que te escriban por WhatsApp"
+            placeholder="Si prefiere que le escriban por WhatsApp"
             accent="brand"
           />
 
@@ -405,7 +405,7 @@ function MisSolicitudes({ contactos }: { contactos: ContactoTaller[] }) {
       {abierto && (
         <div className="space-y-3 border-t border-black/[0.06] p-4">
           {contactos.length === 0 ? (
-            <p className="text-xs text-muted-foreground">Todavía no has contactado a ningún taller desde aquí.</p>
+            <p className="text-xs text-muted-foreground">Todavía no ha contactado a ningún taller desde aquí.</p>
           ) : (
             contactos.map((c) => (
               <div key={c.id} className="space-y-1.5 rounded-lg border border-black/[0.06] p-3">
@@ -509,7 +509,7 @@ export default function ClienteBuscarTalleres() {
           <h1 className="text-lg font-black tracking-tight text-foreground">Buscar Talleres</h1>
         </div>
         <p className="text-xs text-muted-foreground">
-          Encuentra talleres y almacenes de repuestos verificados con Sello de Confianza y contáctalos directo.
+          Encuentre talleres y almacenes de repuestos verificados con Sello de Confianza y contáctelos directamente.
         </p>
       </div>
 
@@ -525,7 +525,7 @@ export default function ClienteBuscarTalleres() {
             </div>
           ) : resultadosCercanos.length === 0 ? (
             <p className="text-xs text-muted-foreground">
-              No encontramos talleres verificados cerca de esa dirección todavía. Seguimos sumando cobertura — probá
+              No encontramos talleres verificados cerca de esa dirección todavía. Seguimos sumando cobertura — pruebe
               buscando por nombre más abajo.
             </p>
           ) : (
@@ -545,7 +545,7 @@ export default function ClienteBuscarTalleres() {
             value={termino}
             onChange={(e) => setTermino(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-            placeholder="Busca por nombre del taller o almacén..."
+            placeholder="Buscar por nombre del taller o almacén..."
             className="h-11 w-full rounded-xl border border-black/10 bg-white pl-9 pr-3 text-sm font-medium shadow-sm transition-all focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/15"
           />
         </div>
@@ -570,7 +570,9 @@ export default function ClienteBuscarTalleres() {
             <Frown className="h-6 w-6 text-brand-600" />
           </div>
           <h4 className="mb-1 text-sm font-bold text-foreground">No encontramos talleres con ese nombre</h4>
-          <p className="max-w-sm text-xs text-muted-foreground">Pronto tendremos más aliados verificados en tu zona.</p>
+          <p className="max-w-sm text-xs text-muted-foreground">
+            Por ahora no contamos con talleres afiliados en esa zona — estamos trabajando para conseguir los mejores.
+          </p>
         </div>
       ) : resultados.length > 0 ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -583,8 +585,8 @@ export default function ClienteBuscarTalleres() {
           <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-brand-500/20 bg-brand-500/10">
             <Search className="h-6 w-6 text-brand-600" />
           </div>
-          <h4 className="mb-1 text-sm font-bold text-foreground">Busca un taller aliado</h4>
-          <p className="max-w-sm text-xs text-muted-foreground">Escribe el nombre del taller o almacén que buscas y presiona Buscar.</p>
+          <h4 className="mb-1 text-sm font-bold text-foreground">Busque un taller aliado</h4>
+          <p className="max-w-sm text-xs text-muted-foreground">Escriba el nombre del taller o almacén que busca y presione Buscar.</p>
         </div>
       )}
 

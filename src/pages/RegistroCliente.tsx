@@ -24,10 +24,13 @@ import { Button } from "@/components/Button";
 import { CIUDADES, OPCIONES_MOTORIZACION, type Motorizacion } from "@/lib/data";
 import { useAuth } from "@/lib/AuthProvider";
 import { leerBusquedaPendiente } from "@/lib/geocoding";
+import { supabase } from "@/lib/supabaseClient";
+import { marcarRegistroPendienteDeBienvenida } from "@/lib/bienvenida";
+import { VERSION_TERMINOS, VERSION_TRATAMIENTO_DATOS } from "@/lib/legal";
 
 type Vehiculo = "carro" | "moto" | "ambos";
 
-const STEPS = ["Tus datos", "Tu ciudad", "Tu vehículo", "Listo"];
+const STEPS = ["Sus datos", "Su ciudad", "Su vehículo", "Listo"];
 
 export default function RegistroCliente() {
   const { registrarCliente } = useAuth();
@@ -35,6 +38,13 @@ export default function RegistroCliente() {
   const [error, setError] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [requiereConfirmacion, setRequiereConfirmacion] = useState(false);
+  // Resultado de la campaña de bienvenida (100 puntos) — null mientras no se
+  // sabe, luego { otorgado, puntos }. Solo se consulta una vez, acá mismo,
+  // justo al crear la cuenta — nunca en login, para que sea imposible que le
+  // llegue a un cliente que ya existía antes de que el admin prendiera la
+  // campaña (ver registrar_bienvenida_si_aplica() en
+  // 0013_campana_bienvenida.sql).
+  const [bienvenida, setBienvenida] = useState<{ otorgado: boolean; puntos: number } | null>(null);
 
   const [nombres, setNombres] = useState("");
   const [apellidos, setApellidos] = useState("");
@@ -49,24 +59,29 @@ export default function RegistroCliente() {
   const [carroMotorizacion, setCarroMotorizacion] = useState<Motorizacion | null>(null);
   const [motoMotorizacion, setMotoMotorizacion] = useState<Motorizacion | null>(null);
 
+  const [aceptoTerminos, setAceptoTerminos] = useState(false);
+  const [aceptoTratamiento, setAceptoTratamiento] = useState(false);
+
   function validateStep(): boolean {
     setError("");
     if (step === 0) {
-      if (!nombres.trim() || !apellidos.trim()) return fail("Contanos tu nombre y apellido.");
-      if (!/^\S+@\S+\.\S+$/.test(correo)) return fail("Ese correo no se ve válido.");
-      if (celular.replace(/\D/g, "").length < 10) return fail("Escribí tu celular completo, con indicativo.");
+      if (!nombres.trim() || !apellidos.trim()) return fail("Indíquenos su nombre y apellido.");
+      if (!/^\S+@\S+\.\S+$/.test(correo)) return fail("Ese correo electrónico no parece válido.");
+      if (celular.replace(/\D/g, "").length < 10) return fail("Ingrese su número de celular completo, con indicativo.");
       if (password.length < 6) return fail("La contraseña necesita al menos 6 caracteres.");
       if (password !== confirmar) return fail("Las contraseñas no coinciden.");
       return true;
     }
     if (step === 1) {
-      if (!ciudad.trim()) return fail("Elegí tu ciudad.");
+      if (!ciudad.trim()) return fail("Seleccione su ciudad.");
       return true;
     }
     if (step === 2) {
-      if (!vehiculo) return fail("Elegí qué tenés: carro, moto o ambos.");
-      if ((vehiculo === "carro" || vehiculo === "ambos") && carroMotorizacion === null) return fail("Contanos si tu carro es eléctrico, híbrido o a combustión.");
-      if ((vehiculo === "moto" || vehiculo === "ambos") && motoMotorizacion === null) return fail("Contanos si tu moto es eléctrica, híbrida o a combustión.");
+      if (!vehiculo) return fail("Seleccione qué vehículo tiene: carro, moto o ambos.");
+      if ((vehiculo === "carro" || vehiculo === "ambos") && carroMotorizacion === null) return fail("Indíquenos si su carro es eléctrico, híbrido o a combustión.");
+      if ((vehiculo === "moto" || vehiculo === "ambos") && motoMotorizacion === null) return fail("Indíquenos si su moto es eléctrica, híbrida o a combustión.");
+      if (!aceptoTerminos) return fail("Debe aceptar los Términos y Condiciones para continuar.");
+      if (!aceptoTratamiento) return fail("Debe autorizar el tratamiento de sus datos personales para continuar.");
       return true;
     }
     return true;
@@ -97,10 +112,28 @@ export default function RegistroCliente() {
         vehiculo: vehiculo ?? undefined,
         carroMotorizacion,
         motoMotorizacion,
+        aceptoTerminosVersion: VERSION_TERMINOS,
+        aceptoTratamientoVersion: VERSION_TRATAMIENTO_DATOS,
       });
-      setEnviando(false);
-      if (err) return fail(err);
+      if (err) {
+        setEnviando(false);
+        return fail(err);
+      }
       setRequiereConfirmacion(pendiente);
+      if (pendiente) {
+        // No hay sesión activa todavía (falta confirmar el correo) — no se
+        // puede llamar al RPC de bienvenida ahora. Se resuelve la primera
+        // vez que este cliente inicie sesión de verdad (ver LoginCliente.tsx).
+        marcarRegistroPendienteDeBienvenida();
+      } else {
+        // Sesión activa de una — se puede consultar la campaña de
+        // bienvenida ahora mismo y mostrar el resultado en esta misma pantalla.
+        const { data, error: bienvenidaErr } = await supabase.rpc("registrar_bienvenida_si_aplica");
+        if (!bienvenidaErr && data && data.length > 0) {
+          setBienvenida({ otorgado: data[0].otorgado, puntos: data[0].puntos });
+        }
+      }
+      setEnviando(false);
     }
     setStep((s) => Math.min(s + 1, STEPS.length - 1));
   }
@@ -114,8 +147,8 @@ export default function RegistroCliente() {
       accent="brand"
       icon={UserCircle}
       eyebrow="Registro de Cliente"
-      title="Creá tu cuenta y encontrá tu taller de confianza"
-      subtitle="Dos minutos hoy, para no volver a jugártela con un taller que no conocés."
+      title="Cree su cuenta y encuentre su taller de confianza"
+      subtitle="Dos minutos hoy, para no volver a arriesgarse con un taller que no conoce."
       bullets={[
         "Talleres y repuestos verificados con Sello de Confianza",
         "Cotizaciones comparadas antes de decidir",
@@ -132,8 +165,8 @@ export default function RegistroCliente() {
         <AnimatePresence mode="wait">
           {step === 0 && (
             <motion.div key="0" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.25 }}>
-              <h2 className="text-2xl font-black tracking-tight text-foreground">Contanos quién sos</h2>
-              <p className="mt-1.5 text-sm text-muted-foreground">Lo básico para crear tu cuenta.</p>
+              <h2 className="text-2xl font-black tracking-tight text-foreground">Confirme sus datos personales</h2>
+              <p className="mt-1.5 text-sm text-muted-foreground">Lo básico para crear su cuenta.</p>
 
               <div className="mt-6 space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-3">
@@ -152,8 +185,8 @@ export default function RegistroCliente() {
 
           {step === 1 && (
             <motion.div key="1" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.25 }}>
-              <h2 className="text-2xl font-black tracking-tight text-foreground">¿Desde dónde nos escribís?</h2>
-              <p className="mt-1.5 text-sm text-muted-foreground">Así te mostramos talleres cerca tuyo.</p>
+              <h2 className="text-2xl font-black tracking-tight text-foreground">¿Desde dónde nos escribe?</h2>
+              <p className="mt-1.5 text-sm text-muted-foreground">Así le mostramos talleres cerca de usted.</p>
 
               <div className="mt-6">
                 <SearchableSelect label="Ciudad" value={ciudad} onChange={setCiudad} options={CIUDADES} accent="brand" required placeholder="Ej: Medellín" />
@@ -163,8 +196,8 @@ export default function RegistroCliente() {
 
           {step === 2 && (
             <motion.div key="2" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.25 }}>
-              <h2 className="text-2xl font-black tracking-tight text-foreground">¿Qué tenés?</h2>
-              <p className="mt-1.5 text-sm text-muted-foreground">Para mostrarte solo lo que aplica a vos.</p>
+              <h2 className="text-2xl font-black tracking-tight text-foreground">¿Qué vehículo tiene?</h2>
+              <p className="mt-1.5 text-sm text-muted-foreground">Para mostrarle solo lo que aplica a su caso.</p>
 
               <div className="mt-6 grid grid-cols-3 gap-2 sm:gap-3">
                 <SelectableCard icon={CarFront} label="Carro" selected={vehiculo === "carro"} onClick={() => selectVehiculo("carro")} accent="brand" compact />
@@ -176,7 +209,7 @@ export default function RegistroCliente() {
                 {(vehiculo === "carro" || vehiculo === "ambos") && (
                   <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mt-5 overflow-hidden">
                     <p className="mb-2 text-xs font-bold text-foreground flex items-center gap-1.5">
-                      <Zap className="h-3.5 w-3.5 text-brand-600" /> ¿Tu carro es eléctrico o híbrido?
+                      <Zap className="h-3.5 w-3.5 text-brand-600" /> ¿Su carro es eléctrico o híbrido?
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
                       {OPCIONES_MOTORIZACION.map((opt) => (
@@ -196,7 +229,7 @@ export default function RegistroCliente() {
                 {(vehiculo === "moto" || vehiculo === "ambos") && (
                   <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mt-5 overflow-hidden">
                     <p className="mb-2 text-xs font-bold text-foreground flex items-center gap-1.5">
-                      <Zap className="h-3.5 w-3.5 text-brand-600" /> ¿Tu moto es eléctrica o híbrida?
+                      <Zap className="h-3.5 w-3.5 text-brand-600" /> ¿Su moto es eléctrica o híbrida?
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
                       {OPCIONES_MOTORIZACION.map((opt) => (
@@ -214,6 +247,39 @@ export default function RegistroCliente() {
                   </motion.div>
                 )}
               </AnimatePresence>
+
+              <div className="mt-6 space-y-2.5 border-t border-black/[0.06] pt-5">
+                <label className="flex items-start gap-2.5 text-xs text-muted-foreground">
+                  <input
+                    type="checkbox"
+                    checked={aceptoTerminos}
+                    onChange={(e) => setAceptoTerminos(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-black/20"
+                  />
+                  <span>
+                    He leído y acepto los{" "}
+                    <Link to="/legal/terminos" target="_blank" className="font-bold text-brand-600 hover:underline">
+                      Términos y Condiciones
+                    </Link>
+                    .
+                  </span>
+                </label>
+                <label className="flex items-start gap-2.5 text-xs text-muted-foreground">
+                  <input
+                    type="checkbox"
+                    checked={aceptoTratamiento}
+                    onChange={(e) => setAceptoTratamiento(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-black/20"
+                  />
+                  <span>
+                    Autorizo el tratamiento de mis datos personales conforme a la{" "}
+                    <Link to="/legal/privacidad" target="_blank" className="font-bold text-brand-600 hover:underline">
+                      Política de Tratamiento de Datos
+                    </Link>
+                    .
+                  </span>
+                </label>
+              </div>
             </motion.div>
           )}
 
@@ -230,16 +296,41 @@ export default function RegistroCliente() {
               <h2 className="text-2xl font-black tracking-tight text-foreground">¡Listo, {nombres || "bienvenido"}!</h2>
               {requiereConfirmacion ? (
                 <p className="mt-2.5 text-sm text-muted-foreground leading-relaxed">
-                  Te mandamos un correo a <span className="font-semibold text-foreground">{correo}</span> para confirmar
-                  tu cuenta — confirmalo y después ya podés iniciar sesión.
+                  Le enviamos un correo a <span className="font-semibold text-foreground">{correo}</span> para confirmar
+                  su cuenta — confírmelo y luego podrá iniciar sesión.
                 </p>
               ) : (
                 <p className="mt-2.5 text-sm text-muted-foreground leading-relaxed">
-                  Ya creamos tu cuenta. Más adelante te vamos a ir preguntando algunas cosas más
-                  (como tu dirección o dónde trabajás) para afinar aún más las recomendaciones —
-                  nada que llenar de una sola vez.
+                  Ya creamos su cuenta. Más adelante le solicitaremos algunos datos adicionales
+                  (como su dirección o su lugar de trabajo) para afinar aún más las recomendaciones —
+                  nada que deba completar de una sola vez.
                 </p>
               )}
+
+              {bienvenida?.otorgado && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="mx-auto mt-4 flex max-w-sm items-center gap-3 rounded-2xl border border-amber-400/30 bg-amber-400/10 p-4 text-left"
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-400/20">
+                    <PartyPopper className="h-5 w-5 text-amber-600" />
+                  </div>
+                  <p className="text-xs font-semibold leading-relaxed text-amber-800">
+                    ¡Ganó {bienvenida.puntos} puntos de bienvenida por registrarse! Los verá reflejados en "Mis
+                    Puntos" apenas esté activa la conexión con el sistema de puntos.
+                  </p>
+                </motion.div>
+              )}
+
+              <div className="mx-auto mt-4 max-w-sm rounded-xl border border-black/[0.06] bg-slate-50 p-3.5 text-left">
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  Por el momento no contamos con talleres afiliados, pero estamos trabajando para conseguir los
+                  mejores. Le avisaremos apenas haya opciones disponibles en su zona.
+                </p>
+              </div>
+
               <Link
                 to={
                   requiereConfirmacion
@@ -281,9 +372,9 @@ export default function RegistroCliente() {
 
         {step === 0 && (
           <p className="mt-6 text-center text-xs text-muted-foreground">
-            ¿Ya tenés cuenta?{" "}
+            ¿Ya tiene una cuenta?{" "}
             <Link to="/login/cliente" className="font-bold text-brand-600 hover:underline">
-              Iniciá sesión
+              Inicie sesión
             </Link>
           </p>
         )}

@@ -7,6 +7,12 @@ import { PasswordField } from "@/components/PasswordField";
 import { Button } from "@/components/Button";
 import { useAuth } from "@/lib/AuthProvider";
 import { leerBusquedaPendiente } from "@/lib/geocoding";
+import { supabase } from "@/lib/supabaseClient";
+import {
+  hayRegistroPendienteDeBienvenida,
+  limpiarRegistroPendienteDeBienvenida,
+  guardarResultadoBienvenida,
+} from "@/lib/bienvenida";
 
 export default function LoginCliente() {
   const navigate = useNavigate();
@@ -47,14 +53,38 @@ export default function LoginCliente() {
       setEnviando(false);
       setIntentoLogin(false);
       setUserIdEsperado(null);
-      setError("Esa cuenta no es de cliente — si tenés un taller, entrá por acá abajo.");
+      setError("Esa cuenta no es de cliente. Si tiene un taller, ingrese por aquí abajo.");
       return;
     }
+    const destino = leerBusquedaPendiente() ? "/portal/cliente/buscar-talleres" : "/portal/cliente";
+
+    // Si este login viene justo después de un registro que necesitó
+    // confirmar el correo (no había sesión activa todavía para consultar la
+    // campaña de bienvenida en ese momento — ver RegistroCliente.tsx), la
+    // resolvemos acá, la primera vez que este cliente entra de verdad —
+    // esperamos el resultado antes de navegar para que ya esté listo cuando
+    // el portal monte. Nunca se dispara para un cliente que no dejó esa
+    // marca, así que nunca es retroactivo para cuentas viejas.
+    if (hayRegistroPendienteDeBienvenida()) {
+      limpiarRegistroPendienteDeBienvenida();
+      void (async () => {
+        try {
+          const { data, error: bienvenidaErr } = await supabase.rpc("registrar_bienvenida_si_aplica");
+          if (!bienvenidaErr && data && data.length > 0) {
+            guardarResultadoBienvenida({ otorgado: data[0].otorgado, puntos: data[0].puntos });
+          }
+        } finally {
+          navigate(destino);
+        }
+      })();
+      return;
+    }
+
     // Si el visitante dejó una búsqueda por dirección a medias en la Home
     // pública (buscó, pero no tenía cuenta), lo mandamos directo a que la
     // vea resuelta en vez de al inicio del portal — ClienteBuscarTalleres
     // es quien la consume y la borra.
-    navigate(leerBusquedaPendiente() ? "/portal/cliente/buscar-talleres" : "/portal/cliente");
+    navigate(destino);
   }, [intentoLogin, userIdEsperado, session, perfil, navigate]);
 
   useEffect(() => {
@@ -64,7 +94,7 @@ export default function LoginCliente() {
       setEnviando(false);
       setIntentoLogin(false);
       setUserIdEsperado(null);
-      setError("No se pudo cargar tu sesión. Intentá de nuevo.");
+      setError("No se pudo cargar su sesión. Intente de nuevo.");
     }, 8000);
     return () => clearTimeout(timeout);
   }, [intentoLogin, userIdEsperado, session, perfil]);
@@ -76,7 +106,7 @@ export default function LoginCliente() {
     const { error: err, userId } = await iniciarSesion(email, password);
     if (err || !userId) {
       setEnviando(false);
-      setError(err ?? "No se pudo iniciar sesión. Intentá de nuevo.");
+      setError(err ?? "No se pudo iniciar sesión. Intente de nuevo.");
       return;
     }
     setUserIdEsperado(userId);
@@ -88,9 +118,9 @@ export default function LoginCliente() {
       accent="brand"
       icon={UserCircle}
       eyebrow="Acceso Clientes"
-      title="Tu taller de confianza te está esperando"
-      subtitle="Entrá a comparar cotizaciones y seguir tus solicitudes con talleres verificados."
-      bullets={["Talleres verificados con Sello de Confianza", "Tus cotizaciones, siempre a mano"]}
+      title="Su taller de confianza le está esperando"
+      subtitle="Ingrese a comparar cotizaciones y dar seguimiento a sus solicitudes con talleres verificados."
+      bullets={["Talleres verificados con Sello de Confianza", "Sus cotizaciones, siempre a mano"]}
     >
       <div className="rounded-3xl border border-black/[0.06] bg-white p-7 shadow-xl sm:p-9">
         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-brand-500/20 bg-brand-500/5 px-3.5 py-1.5 text-[11px] font-bold text-brand-700">
@@ -98,13 +128,13 @@ export default function LoginCliente() {
           Cuenta de Cliente
         </div>
 
-        <h2 className="text-2xl font-black tracking-tight text-foreground">Iniciá sesión</h2>
-        <p className="mt-1.5 text-sm text-muted-foreground">Accedé a tu cuenta de cliente.</p>
+        <h2 className="text-2xl font-black tracking-tight text-foreground">Inicie sesión</h2>
+        <p className="mt-1.5 text-sm text-muted-foreground">Acceda a su cuenta de cliente.</p>
 
         {avisoRolIncorrecto && (
           <div className="mt-4 flex gap-2 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
-            <p className="text-xs text-amber-800">Esa cuenta no es de cliente — si tenés un taller, entrá por acá abajo.</p>
+            <p className="text-xs text-amber-800">Esa cuenta no es de cliente. Si tiene un taller, ingrese por aquí abajo.</p>
           </div>
         )}
 
@@ -115,7 +145,7 @@ export default function LoginCliente() {
             icon={Mail}
             value={email}
             onChange={setEmail}
-            placeholder="tucorreo@ejemplo.com"
+            placeholder="correo@ejemplo.com"
             accent="brand"
             required
           />
@@ -139,7 +169,7 @@ export default function LoginCliente() {
               Recordarme
             </label>
             <Link to="/recuperar-contrasena/cliente" className="text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors">
-              ¿Olvidaste tu contraseña?
+              ¿Olvidó su contraseña?
             </Link>
           </div>
 
@@ -151,16 +181,16 @@ export default function LoginCliente() {
         </form>
 
         <p className="mt-7 text-center text-xs text-muted-foreground">
-          ¿No tenés cuenta todavía?{" "}
+          ¿No tiene cuenta todavía?{" "}
           <Link to="/registro/cliente" className="font-bold text-brand-600 hover:underline">
-            Registrate como cliente
+            Regístrese como cliente
           </Link>
         </p>
 
         <p className="mt-3 text-center text-[11px] text-muted-foreground">
-          ¿Tenés un taller o negocio de repuestos?{" "}
+          ¿Tiene un taller o negocio de repuestos?{" "}
           <Link to="/login/taller" className="font-semibold text-signal-600 hover:underline">
-            Entrá por acá
+            Ingrese por aquí
           </Link>
         </p>
       </div>

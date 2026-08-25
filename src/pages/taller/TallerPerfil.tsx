@@ -245,7 +245,7 @@ export default function TallerPerfil() {
   if (cargando) {
     return (
       <div className="flex items-center justify-center gap-2 py-24 text-sm text-muted-foreground">
-        <Loader2 className="h-4 w-4 animate-spin" /> Cargando tu perfil...
+        <Loader2 className="h-4 w-4 animate-spin" /> Cargando su perfil...
       </div>
     );
   }
@@ -254,7 +254,7 @@ export default function TallerPerfil() {
     <div className="max-w-3xl space-y-6">
       <div className="space-y-1">
         <h1 className="text-2xl font-black tracking-tight text-foreground">Mi perfil</h1>
-        <p className="text-sm text-muted-foreground">Así te ven los clientes en Buscar Talleres y en tus ofertas.</p>
+        <p className="text-sm text-muted-foreground">Así lo ven los clientes en Buscar Talleres y en sus ofertas.</p>
       </div>
 
       {/* Datos del negocio */}
@@ -270,7 +270,7 @@ export default function TallerPerfil() {
             onChange={() => {}}
             accent="signal"
             disabled
-            helpText="Para cambiar tu correo de acceso, escribinos — todavía no se puede hacer desde acá."
+            helpText="Para cambiar su correo de acceso, escríbanos — todavía no se puede hacer desde aquí."
           />
           <TextField label="Celular (WhatsApp)" icon={Phone} prefix="+57" value={data.celular} onChange={(v) => patch({ celular: v })} accent="signal" required />
         </div>
@@ -285,7 +285,7 @@ export default function TallerPerfil() {
       {/* Descripción del negocio — se habilita recién cuando el admin aprueba el taller */}
       <div className="space-y-3 rounded-2xl border border-black/[0.06] bg-white p-5 shadow-sm sm:p-6">
         <h2 className="flex items-center gap-1.5 text-sm font-black text-foreground">
-          <FileText className="h-4 w-4 text-signal-600" /> Descripción de tu negocio
+          <FileText className="h-4 w-4 text-signal-600" /> Descripción de su negocio
         </h2>
 
         {descripcionRequerida ? (
@@ -294,13 +294,13 @@ export default function TallerPerfil() {
               <div className="flex items-start gap-2 rounded-xl border border-signal-500/30 bg-signal-500/5 px-4 py-3 text-xs text-foreground">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-signal-600" />
                 <p>
-                  Ya te aprobamos — ahora nos falta este dato obligatorio: contanos brevemente de tu negocio para que
-                  los clientes te identifiquen.
+                  Ya lo aprobamos — ahora nos falta este dato obligatorio: cuéntenos brevemente de su negocio para que
+                  los clientes lo identifiquen.
                 </p>
               </div>
             )}
             <TextareaField
-              label="Contanos de tu negocio"
+              label="Cuéntenos de su negocio"
               value={data.descripcionNegocio ?? ""}
               onChange={(v) => patch({ descripcionNegocio: v })}
               placeholder="Ej: Taller familiar con 10 años de experiencia en mecánica general, especialistas en frenos y suspensión."
@@ -312,14 +312,14 @@ export default function TallerPerfil() {
             />
             {!descripcionValida && descripcionLen > 0 && (
               <p className="text-[11px] font-semibold text-red-600">
-                Te faltan {DESCRIPCION_NEGOCIO_MIN - descripcionLen} caracteres para poder guardar.
+                Le faltan {DESCRIPCION_NEGOCIO_MIN - descripcionLen} caracteres para poder guardar.
               </p>
             )}
           </>
         ) : (
           <div className="flex items-start gap-2 rounded-xl border border-black/10 bg-black/[0.02] px-4 py-3 text-xs text-muted-foreground">
             <Lock className="mt-0.5 h-4 w-4 shrink-0" />
-            <p>Este campo se habilita apenas el equipo de Taller Aval apruebe tu registro.</p>
+            <p>Este campo se habilita apenas el equipo de Tallergo apruebe su registro.</p>
           </div>
         )}
       </div>
@@ -329,16 +329,16 @@ export default function TallerPerfil() {
         <h2 className="text-sm font-black text-foreground">Categoría</h2>
 
         <div>
-          <p className="mb-2 text-xs font-bold text-foreground">¿Sos almacén o taller?</p>
+          <p className="mb-2 text-xs font-bold text-foreground">¿Es almacén o taller?</p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <SelectableCard icon={Wrench} label="Taller de reparación" description="Hacés mantenimiento y reparaciones." selected={data.tipoNegocio === "taller"} onClick={() => selectTipoNegocio("taller")} accent="signal" />
-            <SelectableCard icon={Package} label="Almacén de repuestos" description="Vendés repuestos, no hacés reparaciones." selected={data.tipoNegocio === "almacen"} onClick={() => selectTipoNegocio("almacen")} accent="signal" />
+            <SelectableCard icon={Wrench} label="Taller de reparación" description="Realiza mantenimiento y reparaciones." selected={data.tipoNegocio === "taller"} onClick={() => selectTipoNegocio("taller")} accent="signal" />
+            <SelectableCard icon={Package} label="Almacén de repuestos" description="Vende repuestos, no realiza reparaciones." selected={data.tipoNegocio === "almacen"} onClick={() => selectTipoNegocio("almacen")} accent="signal" />
           </div>
         </div>
 
         <div>
           <p className="mb-2 text-xs font-bold text-foreground">
-            {data.tipoNegocio === "almacen" ? "¿Para qué vehículos vendés repuestos?" : "¿Qué tipo de vehículos atendés?"}
+            {data.tipoNegocio === "almacen" ? "¿Para qué vehículos vende repuestos?" : "¿Qué tipo de vehículos atiende?"}
           </p>
           <div className="grid grid-cols-3 gap-2 sm:gap-3">
             <SelectableCard icon={CarFront} label="Carro" selected={data.tipoVehiculo === "carro"} onClick={() => selectTipoVehiculo("carro")} accent="signal" compact />
@@ -352,9 +352,9 @@ export default function TallerPerfil() {
             <motion.div key="carro-motorizacion" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
               <p className="mb-0.5 flex items-center gap-1.5 text-xs font-bold text-foreground">
                 <Zap className="h-3.5 w-3.5 text-signal-600" />
-                {data.tipoNegocio === "almacen" ? "¿Para qué motorización de carros vendés repuestos?" : "¿Qué motorización de carros atendés?"}
+                {data.tipoNegocio === "almacen" ? "¿Para qué motorización de carros vende repuestos?" : "¿Qué motorización de carros atiende?"}
               </p>
-              <p className="mb-2 text-[11px] text-muted-foreground">Elegí todas las que apliquen.</p>
+              <p className="mb-2 text-[11px] text-muted-foreground">Seleccione todas las que apliquen.</p>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
                 {OPCIONES_MOTORIZACION.map((opt) => (
                   <SelectableCard key={opt.value} label={opt.label} description={opt.description} selected={data.carroMotorizaciones.includes(opt.value)} onClick={() => toggleCarroMotorizacion(opt.value)} accent="signal" compact />
@@ -366,9 +366,9 @@ export default function TallerPerfil() {
             <motion.div key="moto-motorizacion" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
               <p className="mb-0.5 flex items-center gap-1.5 text-xs font-bold text-foreground">
                 <Zap className="h-3.5 w-3.5 text-signal-600" />
-                {data.tipoNegocio === "almacen" ? "¿Para qué motorización de motos vendés repuestos?" : "¿Qué motorización de motos atendés?"}
+                {data.tipoNegocio === "almacen" ? "¿Para qué motorización de motos vende repuestos?" : "¿Qué motorización de motos atiende?"}
               </p>
-              <p className="mb-2 text-[11px] text-muted-foreground">Elegí todas las que apliquen.</p>
+              <p className="mb-2 text-[11px] text-muted-foreground">Seleccione todas las que apliquen.</p>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
                 {OPCIONES_MOTORIZACION.map((opt) => (
                   <SelectableCard key={opt.value} label={opt.label} description={opt.description} selected={data.motoMotorizaciones.includes(opt.value)} onClick={() => toggleMotoMotorizacion(opt.value)} accent="signal" compact />
@@ -383,12 +383,12 @@ export default function TallerPerfil() {
                 <p className="text-xs text-foreground">
                   {especialistaElectricos ? (
                     <>
-                      <span className="font-bold">Te destacamos como especialista en eléctricos e híbridos.</span>{" "}
-                      Aparecés resaltado para los clientes que busquen justo eso.
+                      <span className="font-bold">Lo destacamos como especialista en eléctricos e híbridos.</span>{" "}
+                      Aparece resaltado para los clientes que busquen justo eso.
                     </>
                   ) : (
                     <>
-                      <span className="font-bold">Aparecés también entre los talleres que atienden eléctricos e híbridos,</span>{" "}
+                      <span className="font-bold">También aparece entre los talleres que atienden eléctricos e híbridos,</span>{" "}
                       además de los convencionales.
                     </>
                   )}
@@ -401,7 +401,7 @@ export default function TallerPerfil() {
 
       {/* Servicios */}
       <div className="space-y-3 rounded-2xl border border-black/[0.06] bg-white p-5 shadow-sm sm:p-6">
-        <h2 className="text-sm font-black text-foreground">{data.tipoNegocio === "almacen" ? "Repuestos que vendés" : "Servicios que ofrecés"}</h2>
+        <h2 className="text-sm font-black text-foreground">{data.tipoNegocio === "almacen" ? "Repuestos que vende" : "Servicios que ofrece"}</h2>
         <div className="flex flex-wrap gap-2.5">
           {opcionesDisponibles.map((s) => (
             <button
@@ -440,7 +440,7 @@ export default function TallerPerfil() {
           Guardar cambios
         </button>
         {!descripcionValida && (
-          <span className="text-[11px] font-semibold text-red-600">Completá la descripción de tu negocio para poder guardar.</span>
+          <span className="text-[11px] font-semibold text-red-600">Complete la descripción de su negocio para poder guardar.</span>
         )}
         <AnimatePresence>
           {guardado && (

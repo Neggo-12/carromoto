@@ -37,7 +37,7 @@ export default function LoginTaller() {
       setEnviando(false);
       setIntentoLogin(false);
       setUserIdEsperado(null);
-      setError("Esa cuenta no es de taller — si sos cliente, entrá por acá abajo.");
+      setError("Esa cuenta no es de taller. Si es cliente, ingrese por aquí abajo.");
       return;
     }
     navigate("/portal/taller");
@@ -50,7 +50,7 @@ export default function LoginTaller() {
       setEnviando(false);
       setIntentoLogin(false);
       setUserIdEsperado(null);
-      setError("No se pudo cargar tu sesión. Intentá de nuevo.");
+      setError("No se pudo cargar su sesión. Intente de nuevo.");
     }, 8000);
     return () => clearTimeout(timeout);
   }, [intentoLogin, userIdEsperado, session, perfil]);
@@ -62,7 +62,7 @@ export default function LoginTaller() {
     const { error: err, userId } = await iniciarSesion(email, password);
     if (err || !userId) {
       setEnviando(false);
-      setError(err ?? "No se pudo iniciar sesión. Intentá de nuevo.");
+      setError(err ?? "No se pudo iniciar sesión. Intente de nuevo.");
       return;
     }
     setUserIdEsperado(userId);
@@ -74,8 +74,8 @@ export default function LoginTaller() {
       accent="signal"
       icon={Store}
       eyebrow="Acceso Talleres"
-      title="Tus próximos clientes te están esperando"
-      subtitle="Entrá a administrar tu perfil, tus servicios y las solicitudes que te lleguen."
+      title="Sus próximos clientes le están esperando"
+      subtitle="Ingrese a administrar su perfil, sus servicios y las solicitudes que le lleguen."
       bullets={["Sello de Confianza verificado, no autodeclarado", "Clientes que ya saben qué necesitan"]}
     >
       <div className="rounded-3xl border border-black/[0.06] bg-white p-7 shadow-xl sm:p-9">
@@ -84,13 +84,13 @@ export default function LoginTaller() {
           Cuenta de Taller
         </div>
 
-        <h2 className="text-2xl font-black tracking-tight text-foreground">Iniciá sesión</h2>
-        <p className="mt-1.5 text-sm text-muted-foreground">Accedé al panel de tu taller.</p>
+        <h2 className="text-2xl font-black tracking-tight text-foreground">Inicie sesión</h2>
+        <p className="mt-1.5 text-sm text-muted-foreground">Acceda al panel de su taller.</p>
 
         {avisoRolIncorrecto && (
           <div className="mt-4 flex gap-2 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
-            <p className="text-xs text-amber-800">Esa cuenta no es de taller — si sos cliente, entrá por acá abajo.</p>
+            <p className="text-xs text-amber-800">Esa cuenta no es de taller. Si es cliente, ingrese por aquí abajo.</p>
           </div>
         )}
 
@@ -101,7 +101,7 @@ export default function LoginTaller() {
             icon={Mail}
             value={email}
             onChange={setEmail}
-            placeholder="tucorreo@ejemplo.com"
+            placeholder="correo@ejemplo.com"
             accent="signal"
             required
           />
@@ -125,7 +125,7 @@ export default function LoginTaller() {
               Recordarme
             </label>
             <Link to="/recuperar-contrasena/taller" className="text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors">
-              ¿Olvidaste tu contraseña?
+              ¿Olvidó su contraseña?
             </Link>
           </div>
 
@@ -137,16 +137,16 @@ export default function LoginTaller() {
         </form>
 
         <p className="mt-7 text-center text-xs text-muted-foreground">
-          ¿No tenés cuenta todavía?{" "}
+          ¿No tiene cuenta todavía?{" "}
           <Link to="/registro/taller" className="font-bold text-signal-600 hover:underline">
-            Registrá tu taller
+            Registre su taller
           </Link>
         </p>
 
         <p className="mt-3 text-center text-[11px] text-muted-foreground">
-          ¿Sos cliente y buscás un taller?{" "}
+          ¿Es cliente y busca un taller?{" "}
           <Link to="/login/cliente" className="font-semibold text-brand-600 hover:underline">
-            Entrá por acá
+            Ingrese por aquí
           </Link>
         </p>
       </div>
