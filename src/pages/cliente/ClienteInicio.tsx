@@ -1,15 +1,21 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Gift, Search, Sparkles, ArrowRight, Coins, PartyPopper, X } from "lucide-react";
+import { Gift, Search, Sparkles, ArrowRight, Coins, PartyPopper, X, KeyRound } from "lucide-react";
 import { leerYLimpiarResultadoBienvenida, type ResultadoBienvenida } from "@/lib/bienvenida";
+import { useAuth } from "@/lib/AuthProvider";
 
 export default function ClienteInicio() {
+  const { perfil } = useAuth();
   const [bienvenida, setBienvenida] = useState<ResultadoBienvenida | null>(null);
 
   useEffect(() => {
     const resultado = leerYLimpiarResultadoBienvenida();
     if (resultado?.otorgado) setBienvenida(resultado);
   }, []);
+
+  // Solo el primer nombre en el saludo (igual que en la generación del
+  // código — ver generar_codigo_cliente() en 0016_codigo_cliente_nombre_cedula.sql).
+  const primerNombre = perfil?.nombre?.trim().split(/\s+/)[0] || null;
 
   return (
     <div className="space-y-6">
@@ -34,11 +40,24 @@ export default function ClienteInicio() {
       )}
 
       <div className="space-y-1">
-        <div className="inline-flex items-center gap-2 rounded-full border border-brand-500/20 bg-brand-500/10 px-3 py-1 text-[10px] font-bold text-brand-700">
-          <Sparkles className="h-3 w-3" />
-          Portal de Cliente
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="inline-flex items-center gap-2 rounded-full border border-brand-500/20 bg-brand-500/10 px-3 py-1 text-[10px] font-bold text-brand-700">
+            <Sparkles className="h-3 w-3" />
+            Portal de Cliente
+          </div>
+          {perfil?.codigoReferido && (
+            <div
+              className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-[11px] font-bold text-amber-700"
+              title="Su código: identifica su cuenta al invitar a otros y, más adelante, para transferir puntos."
+            >
+              <KeyRound className="h-3 w-3" />
+              llave: <span className="font-mono tracking-wide">{perfil.codigoReferido}</span>
+            </div>
+          )}
         </div>
-        <h1 className="text-2xl font-black tracking-tight text-foreground sm:text-3xl">Bienvenido de vuelta</h1>
+        <h1 className="text-2xl font-black tracking-tight text-foreground sm:text-3xl">
+          Bienvenido de vuelta{primerNombre ? `, ${primerNombre}` : ""}
+        </h1>
         <p className="text-sm text-muted-foreground">Busque talleres, revise ofertas y lleve el control de sus puntos.</p>
       </div>
 

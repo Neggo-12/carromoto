@@ -47,10 +47,10 @@ export default function CondicionesPuntos() {
       <Seccion titulo="3. Valor de cada punto y mínimo para redimir">
         <p>
           <strong className="text-foreground">$800</strong> de compra equivalen a <strong className="text-foreground">1 punto</strong>, y{" "}
-          <strong className="text-foreground">1 punto equivale a $10</strong> de valor de referencia (una recompensa
-          base de 1,25%). Ese valor puede subir según el tipo de compra — por ejemplo, campañas activas de un taller
-          o ser cliente nuevo de ese taller aumentan los puntos ganados por la misma compra, pero nunca se suman
-          varios aumentos entre sí, se aplica siempre el más alto que corresponda.
+          <strong className="text-foreground">1 punto equivale a $10</strong> de valor de referencia. Ese valor puede
+          subir según el tipo de compra — por ejemplo, campañas activas de un taller o ser cliente nuevo de ese
+          taller aumentan los puntos ganados por la misma compra, pero nunca se suman varios aumentos entre sí, se
+          aplica siempre el más alto que corresponda.
         </p>
         <p>
           El mínimo para poder redimir puntos es de <strong className="text-foreground">200 puntos</strong> (equivalentes a $2.000).

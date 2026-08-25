@@ -11,6 +11,7 @@ interface MovimientoResumen {
 
 interface Referido {
   referido_nombre: string;
+  referido_codigo: string | null;
   fecha: string;
   puntos_otorgados: number;
 }
@@ -153,7 +154,11 @@ export default function ClientePuntos() {
                 >
                   <div className="min-w-0">
                     <p className="truncate text-xs font-bold text-foreground">{r.referido_nombre}</p>
-                    <p className="text-[10px] text-muted-foreground">{formatFecha(r.fecha)}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {r.referido_codigo ? <span className="font-mono">{r.referido_codigo}</span> : null}
+                      {r.referido_codigo ? " · " : ""}
+                      {formatFecha(r.fecha)}
+                    </p>
                   </div>
                   <span
                     className={

@@ -246,13 +246,17 @@ export default function RegistroCliente() {
                     icon={Gift}
                     value={codigoReferido}
                     onChange={(v) => {
-                      setCodigoReferido(v.toUpperCase());
+                      // Ya no se fuerza a mayúsculas: el código ahora es un
+                      // nombre legible (ej. "jheison68"), no un código
+                      // aleatorio — la validación en el servidor no distingue
+                      // mayúsculas de minúsculas de todas formas.
+                      setCodigoReferido(v);
                       setEstadoCodigo("idle");
                     }}
                     onBlur={() => void validarCodigoReferido()}
-                    placeholder="Si alguien lo invitó, escríbalo aquí"
+                    placeholder="Ej: jheison68"
                     accent="brand"
-                    maxLength={6}
+                    maxLength={24}
                   />
                   {estadoCodigo === "validando" && (
                     <p className="mt-1.5 flex items-center gap-1 text-[11px] font-semibold text-muted-foreground">

@@ -38,9 +38,12 @@ export interface Perfil {
   // taller registrado no debe poder "entrar" (ver CRM, publicar ofertas,
   // editar perfil) mientras esté pendiente, aunque ya tenga sesión activa.
   organizationStatus: EstadoAprobacion | null;
-  // Código propio para invitar a otros — ver src/lib/referidos.ts. Se genera
-  // solo (trigger en la base) para todo usuario nuevo, y por backfill para
-  // los que ya existían antes del sistema de referidos.
+  // Código propio del cliente ("llave") para invitar a otros y, más
+  // adelante, transferir puntos — ver src/lib/referidos.ts. Solo existe para
+  // rol='Cliente'. Es primer nombre + últimos 2 dígitos de la cédula (ej.
+  // "jheison68"); se calcula en guardar_documento_cliente() cuando el
+  // cliente guarda su documento por primera vez (0016_codigo_cliente_nombre_cedula.sql),
+  // no antes — porque hasta ese momento no se conoce su cédula.
   codigoReferido: string | null;
 }
 
@@ -107,10 +110,13 @@ interface AuthContextValue {
   registrarCliente: (datos: DatosRegistroCliente) => Promise<ResultadoRegistro>;
   registrarTaller: (datos: DatosRegistroTaller) => Promise<ResultadoRegistro>;
   // Guarda el tipo/número de documento del usuario logueado (Cliente o
-  // Taller) en public.users — una sola vez. RequireDocumento.tsx lo llama
-  // cuando perfil.documentoTipo/documentoNumero todavía están vacíos, y
-  // como actualiza `perfil` directamente (sin refetch) el gate deja de
-  // pedirlo apenas se guarda, sin esperar a un refresh de página.
+  // Taller) en public.users — una sola vez, vía la función guardar_documento_cliente()
+  // (0016_codigo_cliente_nombre_cedula.sql), que además calcula y guarda el
+  // codigoReferido del cliente en ese mismo momento si todavía no tenía uno.
+  // RequireDocumento.tsx lo llama cuando perfil.documentoTipo/documentoNumero
+  // todavía están vacíos, y como actualiza `perfil` directamente (sin
+  // refetch) el gate deja de pedirlo apenas se guarda, sin esperar a un
+  // refresh de página.
   actualizarDocumento: (documentoTipo: string, documentoNumero: string) => Promise<ResultadoAuth>;
 }
 
@@ -293,12 +299,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function actualizarDocumento(documentoTipo: string, documentoNumero: string): Promise<ResultadoAuth> {
     if (!supabaseConfigurado) return { error: "Supabase todavía no está configurado en este entorno." };
     if (!session) return { error: "No hay sesión activa." };
-    const { error } = await supabase
-      .from("users")
-      .update({ documento_tipo: documentoTipo, documento_numero: documentoNumero })
-      .eq("id", session.user.id);
+    const { data, error } = await supabase.rpc("guardar_documento_cliente", {
+      p_tipo: documentoTipo,
+      p_numero: documentoNumero,
+    });
     if (error) return { error: "No pudimos guardar su documento. Intente de nuevo." };
-    setPerfil((prev) => (prev ? { ...prev, documentoTipo, documentoNumero } : prev));
+    const codigoReferido: string | null = Array.isArray(data) ? (data[0]?.codigo_referido ?? null) : null;
+    setPerfil((prev) => (prev ? { ...prev, documentoTipo, documentoNumero, codigoReferido } : prev));
     return { error: null };
   }
 

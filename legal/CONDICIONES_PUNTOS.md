@@ -32,10 +32,10 @@ activación de la integración con Puntos.
 
 ## 3. Valor de cada punto y mínimo para redimir
 
-**$800** de compra equivalen a **1 punto**, y **1 punto equivale a $10** de valor de referencia (una recompensa base
-de 1,25%). Ese valor puede subir según el tipo de compra — por ejemplo, campañas activas de un taller o ser cliente
-nuevo de ese taller aumentan los puntos ganados por la misma compra, pero nunca se suman varios aumentos entre sí,
-se aplica siempre el más alto que corresponda.
+**$800** de compra equivalen a **1 punto**, y **1 punto equivale a $10** de valor de referencia. Ese valor puede
+subir según el tipo de compra — por ejemplo, campañas activas de un taller o ser cliente nuevo de ese taller
+aumentan los puntos ganados por la misma compra, pero nunca se suman varios aumentos entre sí, se aplica siempre el
+más alto que corresponda.
 
 El mínimo para poder redimir puntos es de **200 puntos** (equivalentes a $2.000).
 
