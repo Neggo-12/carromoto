@@ -871,6 +871,11 @@ export default function LandingHub() {
                     Privacidad
                   </Link>
                 </li>
+                <li>
+                  <Link to="/legal/condiciones-puntos" className="text-[13px] text-[#9CA3AF] hover:text-white transition-colors">
+                    Condiciones de Puntos
+                  </Link>
+                </li>
               </ul>
             </div>
           </div>

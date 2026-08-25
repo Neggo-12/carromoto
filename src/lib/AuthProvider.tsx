@@ -38,6 +38,10 @@ export interface Perfil {
   // taller registrado no debe poder "entrar" (ver CRM, publicar ofertas,
   // editar perfil) mientras esté pendiente, aunque ya tenga sesión activa.
   organizationStatus: EstadoAprobacion | null;
+  // Código propio para invitar a otros — ver src/lib/referidos.ts. Se genera
+  // solo (trigger en la base) para todo usuario nuevo, y por backfill para
+  // los que ya existían antes del sistema de referidos.
+  codigoReferido: string | null;
 }
 
 export interface DatosRegistroCliente {
@@ -59,6 +63,9 @@ export interface DatosRegistroCliente {
   // `consentimientos` (0014_consentimientos_legales.sql).
   aceptoTerminosVersion: string;
   aceptoTratamientoVersion: string;
+  // Código de quien lo refirió, si vino de una invitación (ver
+  // src/lib/referidos.ts) — opcional, se valida antes de llegar acá.
+  codigoReferido?: string | null;
 }
 
 export interface DatosRegistroTaller {
@@ -192,6 +199,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           motoMotorizacion: data.moto_motorizacion ?? null,
           organizationId,
           organizationStatus,
+          codigoReferido: data.codigo_referido ?? null,
         });
       } else {
         setPerfil(null);
@@ -251,6 +259,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           moto_motorizacion: datos.motoMotorizacion ?? null,
           acepto_terminos_version: datos.aceptoTerminosVersion,
           acepto_tratamiento_version: datos.aceptoTratamientoVersion,
+          codigo_referido_usado: datos.codigoReferido?.trim() || null,
         },
       },
     });

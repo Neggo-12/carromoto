@@ -304,6 +304,7 @@ export default function LandingClientes() {
               <Link to="/talleres" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Tengo un taller</Link>
               <Link to="/legal/terminos" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Términos</Link>
               <Link to="/legal/privacidad" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Privacidad</Link>
+              <Link to="/legal/condiciones-puntos" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Condiciones de Puntos</Link>
               <Link to="/" className="text-xs text-brand-600 hover:text-brand-400 transition-colors">Inicio</Link>
             </div>
           </div>

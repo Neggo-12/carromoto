@@ -1,36 +1,56 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Megaphone, Gift, Loader2, CheckCircle2, FileDown, Store, Trophy } from "lucide-react";
+import { Megaphone, Gift, Loader2, CheckCircle2, FileDown, Store, Trophy, UserPlus } from "lucide-react";
+import type { ElementType } from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { supabase } from "@/lib/supabaseClient";
 import { cn } from "@/lib/utils";
 
-// ───── Campaña de bienvenida (100 puntos) ─────
+// ───── Panel genérico de "campaña togglable con puntos" ─────
+// Mismo shape de tabla para campana_bienvenida y campana_referidos (fila
+// única id='global', activa boolean, puntos integer) — un solo componente
+// parametrizado en vez de duplicar el mismo panel dos veces.
 
-interface ConfigBienvenida {
+interface ConfigCampana {
   activa: boolean;
   puntos: number;
 }
 
-function CampanaBienvenidaPanel() {
-  const [config, setConfig] = useState<ConfigBienvenida | null>(null);
+function CampanaTogglePanel({
+  tabla,
+  icon: Icon,
+  iconClase,
+  titulo,
+  descripcion,
+  etiquetaPuntos,
+  nota,
+}: {
+  tabla: "campana_bienvenida" | "campana_referidos";
+  icon: ElementType;
+  iconClase: string;
+  titulo: string;
+  descripcion: string;
+  etiquetaPuntos: string;
+  nota: string;
+}) {
+  const [config, setConfig] = useState<ConfigCampana | null>(null);
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [guardado, setGuardado] = useState(false);
 
   useEffect(() => {
     void (async () => {
-      const { data } = await supabase.from("campana_bienvenida").select("activa, puntos").eq("id", "global").maybeSingle();
-      if (data) setConfig(data as ConfigBienvenida);
+      const { data } = await supabase.from(tabla).select("activa, puntos").eq("id", "global").maybeSingle();
+      if (data) setConfig(data as ConfigCampana);
       setCargando(false);
     })();
-  }, []);
+  }, [tabla]);
 
-  async function guardar(next: ConfigBienvenida) {
+  async function guardar(next: ConfigCampana) {
     setConfig(next);
     setGuardando(true);
     setGuardado(false);
-    const { error } = await supabase.from("campana_bienvenida").update(next).eq("id", "global");
+    const { error } = await supabase.from(tabla).update(next).eq("id", "global");
     setGuardando(false);
     if (!error) {
       setGuardado(true);
@@ -41,12 +61,12 @@ function CampanaBienvenidaPanel() {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="flex items-center gap-2">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-400/15">
-          <Gift className="h-4.5 w-4.5 text-amber-600" />
+        <div className={cn("flex h-9 w-9 items-center justify-center rounded-xl", iconClase)}>
+          <Icon className="h-4.5 w-4.5" />
         </div>
         <div>
-          <h2 className="text-sm font-black text-slate-900">Campaña de bienvenida</h2>
-          <p className="text-xs text-slate-500">100 puntos automáticos para los clientes que se registren mientras esté activa.</p>
+          <h2 className="text-sm font-black text-slate-900">{titulo}</h2>
+          <p className="text-xs text-slate-500">{descripcion}</p>
         </div>
       </div>
 
@@ -81,7 +101,7 @@ function CampanaBienvenidaPanel() {
           </div>
 
           <label className="flex items-center gap-2 text-xs font-semibold text-slate-600">
-            Puntos por registro
+            {etiquetaPuntos}
             <input
               type="number"
               min={1}
@@ -100,10 +120,7 @@ function CampanaBienvenidaPanel() {
         </div>
       ) : null}
 
-      <p className="mt-4 text-[11px] leading-relaxed text-slate-400">
-        Se aplica solo a clientes que se registren de ahora en adelante, nunca a cuentas que ya existían. El otorgamiento
-        queda registrado para cuando esté conectado el sistema real de puntos — todavía no se envían puntos reales.
-      </p>
+      <p className="mt-4 text-[11px] leading-relaxed text-slate-400">{nota}</p>
     </div>
   );
 }
@@ -379,7 +396,24 @@ export default function AdminCampanas() {
       </div>
 
       <div className="space-y-5">
-        <CampanaBienvenidaPanel />
+        <CampanaTogglePanel
+          tabla="campana_bienvenida"
+          icon={Gift}
+          iconClase="bg-amber-400/15 text-amber-600"
+          titulo="Campaña de bienvenida"
+          descripcion="Puntos automáticos para los clientes que se registren mientras esté activa."
+          etiquetaPuntos="Puntos por registro"
+          nota="Se aplica solo a clientes que se registren de ahora en adelante, nunca a cuentas que ya existían. El otorgamiento queda registrado para cuando esté conectado el sistema real de puntos — todavía no se envían puntos reales."
+        />
+        <CampanaTogglePanel
+          tabla="campana_referidos"
+          icon={UserPlus}
+          iconClase="bg-brand-500/15 text-brand-600"
+          titulo="Campaña de referidos"
+          descripcion="Puntos para el cliente que invita, cuando alguien se registra con su código mientras esté activa."
+          etiquetaPuntos="Puntos por referido"
+          nota="Cada cliente tiene un código propio para compartir (visible en su 'Mis Puntos'). Los puntos van para quien invitó, una sola vez por persona referida, y solo mientras esta campaña está activa. El otorgamiento queda registrado para cuando esté conectado el sistema real de puntos — todavía no se envían puntos reales."
+        />
         <ExportarCampanasPanel />
       </div>
     </div>

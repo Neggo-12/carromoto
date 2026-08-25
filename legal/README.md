@@ -6,6 +6,7 @@ Este alcance es una implementación acotada al proyecto Tallergo del documento `
 
 - Términos y Condiciones (`TERMINOS_Y_CONDICIONES.md`).
 - Política de Tratamiento de Datos / Aviso de Privacidad (`POLITICA_TRATAMIENTO_DATOS.md`), conforme a la Ley 1581 de 2012 y el Decreto 1074 de 2015.
+- Condiciones de Puntos (`CONDICIONES_PUNTOS.md`) — todavía en borrador, ver más abajo.
 - Consentimiento granular en el registro: dos casillas separadas (nunca premarcadas) — una para aceptar Términos, otra para autorizar el tratamiento de datos. Nunca se mezclan (ver sección 7 y 25 del documento maestro).
 - Evidencia real de cada aceptación: tabla `consentimientos` en la base de datos (usuario, documento, versión, fecha) — ver `supabase/migrations/0014_consentimientos_legales.sql`. Es un registro de solo lectura, nunca se edita ni se borra.
 
@@ -16,6 +17,7 @@ El documento maestro es explícito: "No inventes hechos legales, proveedores, pa
 1. **Responsable del Tratamiento** — razón social exacta, NIT y domicilio de la sociedad que opera Tallergo (nunca puede ser solo la marca comercial — ver sección 3 del documento maestro).
 2. **Canal de contacto para ejercer derechos de Hábeas Data** (correo o formulario real donde un titular pueda pedir consulta, actualización o supresión de sus datos).
 3. **Costos/comisiones de la plataforma** — hoy Tallergo no cobra nada (ver la landing de talleres), pero si eso cambia, la Política y los Términos deben actualizarse antes de publicar el cambio.
+4. **Fecha de activación de la integración con Puntos** (el sistema unificado de puntos, repo `puntos-neggo`) — es lo único que sigue `[PENDIENTE]` en `CONDICIONES_PUNTOS.md` / `/legal/condiciones-puntos`. El valor de canje ($800 compra = 1 punto, 1 punto = $10), el mínimo de redención (200 puntos), el mecanismo de redención y la vigencia (12 meses por lote, no por saldo total) ya NO son inventados: se tomaron directo del modelo económico real que Jhey ya definió el 17 de agosto de 2026 en `puntos-neggo/docs/modelo-economico-v1.md`, confirmado con él el 25 de agosto de 2026.
 
 Hasta que el negocio complete el punto 1 y 2, los documentos publicados están jurídicamente incompletos — sirven como borrador funcional y para tener el consentimiento granular funcionando, pero deberían pasar por revisión de un abogado antes de considerarse definitivos (el propio documento maestro lo pide explícitamente en su sección 30: "no constituye por sí misma asesoría jurídica ni garantiza cumplimiento").
 

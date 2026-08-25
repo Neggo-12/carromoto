@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -13,6 +13,9 @@ import {
   Zap,
   PartyPopper,
   UserCircle,
+  Gift,
+  Check,
+  Loader2,
 } from "lucide-react";
 import { AuthLayout } from "@/components/AuthLayout";
 import { TextField } from "@/components/TextField";
@@ -26,6 +29,7 @@ import { useAuth } from "@/lib/AuthProvider";
 import { leerBusquedaPendiente } from "@/lib/geocoding";
 import { supabase } from "@/lib/supabaseClient";
 import { marcarRegistroPendienteDeBienvenida } from "@/lib/bienvenida";
+import { marcarRegistroPendienteDeReferido } from "@/lib/referidos";
 import { VERSION_TERMINOS, VERSION_TRATAMIENTO_DATOS } from "@/lib/legal";
 
 type Vehiculo = "carro" | "moto" | "ambos";
@@ -53,6 +57,12 @@ export default function RegistroCliente() {
   const [password, setPassword] = useState("");
   const [confirmar, setConfirmar] = useState("");
 
+  // Código de quien lo refirió (opcional) — se valida contra la base antes
+  // de dejar avanzar, para no guardar un código inventado. "idle" = todavía
+  // no se escribió/validó nada, así que un campo vacío nunca bloquea el paso.
+  const [codigoReferido, setCodigoReferido] = useState("");
+  const [estadoCodigo, setEstadoCodigo] = useState<"idle" | "validando" | "valido" | "invalido">("idle");
+
   const [ciudad, setCiudad] = useState("");
 
   const [vehiculo, setVehiculo] = useState<Vehiculo | null>(null);
@@ -61,6 +71,11 @@ export default function RegistroCliente() {
 
   const [aceptoTerminos, setAceptoTerminos] = useState(false);
   const [aceptoTratamiento, setAceptoTratamiento] = useState(false);
+
+  // Cuántos talleres/almacenes ya están aprobados — decide si se muestra el
+  // aviso de "todavía no tenemos talleres" en la pantalla final. null
+  // mientras carga (no se muestra nada hasta saberlo, para no parpadear).
+  const [hayTalleres, setHayTalleres] = useState<boolean | null>(null);
 
   function validateStep(): boolean {
     setError("");
@@ -92,6 +107,39 @@ export default function RegistroCliente() {
     return false;
   }
 
+  // Se consulta apenas se monta la pantalla (no depende de nada del
+  // formulario) — organizations con status='aprobado' es públicamente
+  // legible por RLS, así que funciona sin sesión.
+  useEffect(() => {
+    let activo = true;
+    supabase
+      .from("organizations")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "aprobado")
+      .then(({ count }) => {
+        if (activo) setHayTalleres((count ?? 0) > 0);
+      });
+    return () => {
+      activo = false;
+    };
+  }, []);
+
+  async function validarCodigoReferido() {
+    const codigo = codigoReferido.trim();
+    if (!codigo) {
+      setEstadoCodigo("idle");
+      return true;
+    }
+    setEstadoCodigo("validando");
+    const { data } = await supabase.rpc("validar_codigo_referido", { p_codigo: codigo });
+    if (data === true) {
+      setEstadoCodigo("valido");
+      return true;
+    }
+    setEstadoCodigo("invalido");
+    return false;
+  }
+
   function selectVehiculo(v: Vehiculo) {
     setVehiculo(v);
     if (v !== "carro" && v !== "ambos") setCarroMotorizacion(null);
@@ -100,6 +148,12 @@ export default function RegistroCliente() {
 
   async function next() {
     if (!validateStep()) return;
+    if (step === 0 && codigoReferido.trim()) {
+      // Se valida server-side antes de dejar avanzar — un código inventado
+      // simplemente no debe pasar a la siguiente pantalla sin avisar.
+      const ok = await validarCodigoReferido();
+      if (!ok) return fail("Ese código de invitación no existe. Revíselo o déjelo vacío.");
+    }
     if (step === STEPS.length - 2) {
       // Último paso con datos reales — acá se crea la cuenta de verdad.
       setEnviando(true);
@@ -114,6 +168,7 @@ export default function RegistroCliente() {
         motoMotorizacion,
         aceptoTerminosVersion: VERSION_TERMINOS,
         aceptoTratamientoVersion: VERSION_TRATAMIENTO_DATOS,
+        codigoReferido: codigoReferido.trim() || null,
       });
       if (err) {
         setEnviando(false);
@@ -122,16 +177,21 @@ export default function RegistroCliente() {
       setRequiereConfirmacion(pendiente);
       if (pendiente) {
         // No hay sesión activa todavía (falta confirmar el correo) — no se
-        // puede llamar al RPC de bienvenida ahora. Se resuelve la primera
-        // vez que este cliente inicie sesión de verdad (ver LoginCliente.tsx).
+        // pueden llamar los RPC de bienvenida/referido ahora. Se resuelven
+        // la primera vez que este cliente inicie sesión de verdad (ver
+        // LoginCliente.tsx).
         marcarRegistroPendienteDeBienvenida();
+        marcarRegistroPendienteDeReferido();
       } else {
-        // Sesión activa de una — se puede consultar la campaña de
-        // bienvenida ahora mismo y mostrar el resultado en esta misma pantalla.
+        // Sesión activa de una — se pueden consultar las dos campañas ahora
+        // mismo y mostrar el resultado de bienvenida en esta misma pantalla
+        // (el bono de referido lo recibe la OTRA persona, no hay nada que
+        // mostrarle acá a quien se acaba de registrar).
         const { data, error: bienvenidaErr } = await supabase.rpc("registrar_bienvenida_si_aplica");
         if (!bienvenidaErr && data && data.length > 0) {
           setBienvenida({ otorgado: data[0].otorgado, puntos: data[0].puntos });
         }
+        await supabase.rpc("registrar_puntos_referido_si_aplica");
       }
       setEnviando(false);
     }
@@ -178,6 +238,35 @@ export default function RegistroCliente() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-3">
                   <PasswordField label="Contraseña" value={password} onChange={setPassword} accent="brand" required />
                   <PasswordField label="Confirmar" value={confirmar} onChange={setConfirmar} accent="brand" required />
+                </div>
+
+                <div>
+                  <TextField
+                    label="Código de invitación (opcional)"
+                    icon={Gift}
+                    value={codigoReferido}
+                    onChange={(v) => {
+                      setCodigoReferido(v.toUpperCase());
+                      setEstadoCodigo("idle");
+                    }}
+                    onBlur={() => void validarCodigoReferido()}
+                    placeholder="Si alguien lo invitó, escríbalo aquí"
+                    accent="brand"
+                    maxLength={6}
+                  />
+                  {estadoCodigo === "validando" && (
+                    <p className="mt-1.5 flex items-center gap-1 text-[11px] font-semibold text-muted-foreground">
+                      <Loader2 className="h-3 w-3 animate-spin" /> Verificando código...
+                    </p>
+                  )}
+                  {estadoCodigo === "valido" && (
+                    <p className="mt-1.5 flex items-center gap-1 text-[11px] font-semibold text-emerald-600">
+                      <Check className="h-3 w-3" /> Código válido.
+                    </p>
+                  )}
+                  {estadoCodigo === "invalido" && (
+                    <p className="mt-1.5 text-[11px] font-semibold text-red-600">Ese código no existe. Verifíquelo o déjelo vacío.</p>
+                  )}
                 </div>
               </div>
             </motion.div>
@@ -318,18 +407,19 @@ export default function RegistroCliente() {
                     <PartyPopper className="h-5 w-5 text-amber-600" />
                   </div>
                   <p className="text-xs font-semibold leading-relaxed text-amber-800">
-                    ¡Ganó {bienvenida.puntos} puntos de bienvenida por registrarse! Los verá reflejados en "Mis
-                    Puntos" apenas esté activa la conexión con el sistema de puntos.
+                    ¡Ganó {bienvenida.puntos} puntos de bienvenida por registrarse! Ya los puede ver en "Mis Puntos".
                   </p>
                 </motion.div>
               )}
 
-              <div className="mx-auto mt-4 max-w-sm rounded-xl border border-black/[0.06] bg-slate-50 p-3.5 text-left">
-                <p className="text-xs leading-relaxed text-muted-foreground">
-                  Por el momento no contamos con talleres afiliados, pero estamos trabajando para conseguir los
-                  mejores. Le avisaremos apenas haya opciones disponibles en su zona.
-                </p>
-              </div>
+              {hayTalleres === false && (
+                <div className="mx-auto mt-4 max-w-sm rounded-xl border border-black/[0.06] bg-slate-50 p-3.5 text-left">
+                  <p className="text-xs leading-relaxed text-muted-foreground">
+                    Por el momento no contamos con talleres afiliados, pero estamos trabajando para conseguir los
+                    mejores. Le avisaremos apenas haya opciones disponibles en su zona.
+                  </p>
+                </div>
+              )}
 
               <Link
                 to={

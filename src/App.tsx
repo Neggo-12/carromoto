@@ -35,6 +35,7 @@ import TallerScore from "./pages/taller/TallerScore";
 import TallerComprobantes from "./pages/taller/TallerComprobantes";
 import Terminos from "./pages/legal/Terminos";
 import Privacidad from "./pages/legal/Privacidad";
+import CondicionesPuntos from "./pages/legal/CondicionesPuntos";
 
 export default function App() {
   return (
@@ -61,6 +62,7 @@ export default function App() {
               footer de las landing pages. */}
           <Route path="/legal/terminos" element={<Terminos />} />
           <Route path="/legal/privacidad" element={<Privacidad />} />
+          <Route path="/legal/condiciones-puntos" element={<CondicionesPuntos />} />
 
           {/* Portal de Cliente — Ofertas, Buscar Talleres y Puntos. Protegido
               con sesión real de Supabase en cuanto esté configurado; hasta

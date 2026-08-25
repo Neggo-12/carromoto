@@ -13,6 +13,7 @@ import {
   limpiarRegistroPendienteDeBienvenida,
   guardarResultadoBienvenida,
 } from "@/lib/bienvenida";
+import { hayRegistroPendienteDeReferido, limpiarRegistroPendienteDeReferido } from "@/lib/referidos";
 
 export default function LoginCliente() {
   const navigate = useNavigate();
@@ -65,14 +66,19 @@ export default function LoginCliente() {
     // esperamos el resultado antes de navegar para que ya esté listo cuando
     // el portal monte. Nunca se dispara para un cliente que no dejó esa
     // marca, así que nunca es retroactivo para cuentas viejas.
-    if (hayRegistroPendienteDeBienvenida()) {
+    if (hayRegistroPendienteDeBienvenida() || hayRegistroPendienteDeReferido()) {
       limpiarRegistroPendienteDeBienvenida();
+      limpiarRegistroPendienteDeReferido();
       void (async () => {
         try {
           const { data, error: bienvenidaErr } = await supabase.rpc("registrar_bienvenida_si_aplica");
           if (!bienvenidaErr && data && data.length > 0) {
             guardarResultadoBienvenida({ otorgado: data[0].otorgado, puntos: data[0].puntos });
           }
+          // El bono de referido lo recibe la otra persona (quien invitó), no
+          // hay nada que mostrarle a este cliente — solo hace falta llamarlo
+          // para que se otorgue.
+          await supabase.rpc("registrar_puntos_referido_si_aplica");
         } finally {
           navigate(destino);
         }
