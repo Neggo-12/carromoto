@@ -61,10 +61,6 @@ export default function RegistroTaller() {
 
   const [tipoNegocio, setTipoNegocioState] = useState<TipoNegocio | null>(null);
   const [tipoVehiculo, setTipoVehiculoState] = useState<TipoVehiculo | null>(null);
-  // Multi-select: un taller puede atender varias motorizaciones a la vez
-  // (ej. combustión Y eléctrico), no una sola — antes esto era un valor
-  // único y forzaba a elegir solo una opción, lo cual era confuso y además
-  // no reflejaba la realidad de la mayoría de talleres.
   const [carroMotorizaciones, setCarroMotorizaciones] = useState<Motorizacion[]>([]);
   const [motoMotorizaciones, setMotoMotorizaciones] = useState<Motorizacion[]>([]);
 
@@ -90,9 +86,6 @@ export default function RegistroTaller() {
     return [];
   }, [tipoNegocio, tipoVehiculo]);
 
-  // Motorizaciones que de verdad aplican según el tipo de vehículo elegido
-  // (si solo atiende carro, lo de moto no cuenta aunque haya quedado en el
-  // estado de un paso anterior).
   const motorizacionesAplicables = useMemo(() => {
     const deCarro = tipoVehiculo === "carro" || tipoVehiculo === "ambos" ? carroMotorizaciones : [];
     const deMoto = tipoVehiculo === "moto" || tipoVehiculo === "ambos" ? motoMotorizaciones : [];
@@ -100,9 +93,6 @@ export default function RegistroTaller() {
   }, [tipoVehiculo, carroMotorizaciones, motoMotorizaciones]);
 
   const algunoElectrificado = motorizacionesAplicables.some((m) => m === "electrico" || m === "hibrido");
-  // Especialista exclusivo = todo lo que marcó es eléctrico/híbrido, sin
-  // combustión — se calcula solo, ya no hace falta preguntarlo aparte (esa
-  // pregunta repetía lo que ya habían contestado arriba y confundía).
   const especialistaElectricos = algunoElectrificado && !motorizacionesAplicables.includes("combustion");
 
   function toggleCarroMotorizacion(v: Motorizacion) {
@@ -137,6 +127,11 @@ export default function RegistroTaller() {
   function fail(msg: string) {
     setError(msg);
     return false;
+  }
+
+  function back() {
+    setError("");
+    setStep((s) => Math.max(s - 1, 0));
   }
 
   function validateStep(): boolean {
@@ -184,38 +179,45 @@ export default function RegistroTaller() {
   async function next() {
     if (!validateStep()) return;
     if (step === STEPS.length - 2) {
-      // Último paso con datos reales — acá se crea la cuenta + el negocio.
       setEnviando(true);
-      const { error: err, requiereConfirmacion: pendiente } = await registrarTaller({
-        correo,
-        password,
-        nombre: nombreEncargado.trim(),
-        celular,
-        nombreNegocio: nombreNegocio.trim(),
-        tipoNegocio: tipoNegocio ?? "taller",
-        ciudad,
-        metadata: {
-          barrio,
-          direccion,
-          tipo_vehiculo: tipoVehiculo,
-          carro_motorizacion: carroMotorizaciones,
-          moto_motorizacion: motoMotorizaciones,
-          especialista_electricos: especialistaElectricos,
-          servicios,
-          horario,
-        },
-        aceptoTerminosVersion: VERSION_TERMINOS,
-        aceptoTratamientoVersion: VERSION_TRATAMIENTO_DATOS,
-      });
-      setEnviando(false);
-      if (err) return fail(err);
-      setRequiereConfirmacion(pendiente);
+      try {
+        const { error: err, requiereConfirmacion: pendiente } = await registrarTaller({
+          correo,
+          password,
+          nombre: nombreEncargado.trim(),
+          celular,
+          nombreNegocio: nombreNegocio.trim(),
+          tipoNegocio: tipoNegocio ?? "taller",
+          ciudad,
+          metadata: {
+            barrio,
+            direccion,
+            tipo_vehiculo: tipoVehiculo,
+            carro_motorizacion: carroMotorizaciones,
+            moto_motorizacion: motoMotorizaciones,
+            especialista_electricos: especialistaElectricos,
+            servicios,
+            horario,
+          },
+          aceptoTerminosVersion: VERSION_TERMINOS,
+          aceptoTratamientoVersion: VERSION_TRATAMIENTO_DATOS,
+        });
+
+        if (err) {
+          fail(err);
+          return;
+        }
+
+        setRequiereConfirmacion(pendiente);
+        setStep((s) => Math.min(s + 1, STEPS.length - 1));
+      } catch (e) {
+        fail("Ocurrió un error inesperado al conectar con el servidor. Intente de nuevo.");
+      } finally {
+        setEnviando(false);
+      }
+    } else {
+      setStep((s) => Math.min(s + 1, STEPS.length - 1));
     }
-    setStep((s) => Math.min(s + 1, STEPS.length - 1));
-  }
-  function back() {
-    setError("");
-    setStep((s) => Math.max(s - 1, 0));
   }
 
   return (
@@ -367,9 +369,6 @@ export default function RegistroTaller() {
                 )}
               </AnimatePresence>
 
-              {/* Se calcula solo a partir de lo que marcaron arriba — ya no
-                  se vuelve a preguntar. Eléctrico/híbrido queda destacado
-                  con su propia insignia en vez de una pregunta aparte. */}
               <AnimatePresence>
                 {algunoElectrificado && (
                   <motion.div
