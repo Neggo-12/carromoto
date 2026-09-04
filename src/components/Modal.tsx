@@ -8,14 +8,23 @@ interface ModalProps {
   title: string;
   description?: string;
   children: ReactNode;
+  // "md" (por defecto, max-w-md) para diálogos cortos — confirmaciones,
+  // contacto con taller. "lg" (max-w-2xl) para paneles con más contenido,
+  // como el mini CRM de talleres (checklist de documentos + bitácora).
+  size?: "md" | "lg";
 }
+
+const sizeClass: Record<"md" | "lg", string> = {
+  md: "max-w-md",
+  lg: "max-w-2xl",
+};
 
 /**
  * Modal genérico — overlay + tarjeta centrada, mismo lenguaje visual que el
  * resto del sitio (rounded-3xl, sombra suave, borde negro muy tenue).
  * Reutilizable para cualquier diálogo (contacto con taller, confirmaciones, etc.).
  */
-export function Modal({ open, onClose, title, description, children }: ModalProps) {
+export function Modal({ open, onClose, title, description, children, size = "md" }: ModalProps) {
   return (
     <AnimatePresence>
       {open && (
@@ -37,7 +46,7 @@ export function Modal({ open, onClose, title, description, children }: ModalProp
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 8 }}
             transition={{ type: "spring", stiffness: 340, damping: 28 }}
-            className="relative max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl border border-black/[0.06] bg-white p-6 shadow-2xl sm:p-7"
+            className={`relative max-h-[90vh] w-full ${sizeClass[size]} overflow-y-auto rounded-3xl border border-black/[0.06] bg-white p-6 shadow-2xl sm:p-7`}
           >
             <button
               type="button"

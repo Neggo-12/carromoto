@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Mail, Phone, MapPin, User, Check, X, CarFront, Bike, Car, Zap, Store, Package, ShieldCheck, FileText, AlertCircle, Loader2 } from "lucide-react";
+import { Mail, Phone, MapPin, User, Check, X, CarFront, Bike, Car, Zap, Store, Package, ShieldCheck, FileText, AlertCircle, Loader2, ClipboardList } from "lucide-react";
 import { StatusBadge } from "@/components/admin/StatusBadge";
+import { TallerCrmModal } from "@/components/admin/TallerCrmModal";
 import { supabase } from "@/lib/supabaseClient";
 import { cn } from "@/lib/utils";
 
@@ -76,6 +77,9 @@ export default function AdminTalleres() {
   const [cargando, setCargando] = useState(true);
   const [filtroEstado, setFiltroEstado] = useState<FiltroEstado>("todos");
   const [filtroCategoria, setFiltroCategoria] = useState<FiltroCategoria>("todos");
+  // Mini CRM (checklist de documentos + bitácora) — ver TallerCrmModal.tsx y
+  // 0019_crm_documentos_talleres.sql. Se abre por taller, uno a la vez.
+  const [crmAbierto, setCrmAbierto] = useState<OrganizacionAdmin | null>(null);
 
   const cargar = useCallback(async () => {
     setCargando(true);
@@ -277,6 +281,13 @@ export default function AdminTalleres() {
 
                   {/* Acciones */}
                   <div className="flex shrink-0 flex-col items-start gap-3 lg:items-end">
+                    <button
+                      type="button"
+                      onClick={() => setCrmAbierto(t)}
+                      className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3.5 py-2 text-xs font-bold text-slate-600 transition-colors hover:border-brand-300 hover:bg-brand-500/5 hover:text-brand-700"
+                    >
+                      <ClipboardList className="h-3.5 w-3.5" /> Gestionar documentos
+                    </button>
                     {t.status === "pendiente" && (
                       <div className="flex gap-2">
                         <button
@@ -340,6 +351,14 @@ export default function AdminTalleres() {
           )}
         </div>
       )}
+
+      <TallerCrmModal
+        open={crmAbierto !== null}
+        onClose={() => setCrmAbierto(null)}
+        organizationId={crmAbierto?.id ?? ""}
+        nombreTaller={crmAbierto?.name ?? ""}
+        celular={crmAbierto ? (encargados[crmAbierto.id]?.celular ?? null) : null}
+      />
     </div>
   );
 }
