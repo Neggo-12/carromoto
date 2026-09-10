@@ -139,7 +139,7 @@ export default function RegistroTaller() {
     if (step === 0) {
       if (!nombreEncargado.trim()) return fail("Indíquenos su nombre.");
       if (!/^\S+@\S+\.\S+$/.test(correo)) return fail("Ese correo electrónico no parece válido.");
-      if (celular.replace(/\D/g, "").length < 10) return fail("Ingrese el celular completo, con indicativo.");
+      if (celular.replace(/\D/g, "").length < 10) return fail("Ingrese el WhatsApp completo, con indicativo.");
       if (password.length < 6) return fail("La contraseña necesita al menos 6 caracteres.");
       if (password !== confirmar) return fail("Las contraseñas no coinciden.");
       return true;
@@ -249,7 +249,7 @@ export default function RegistroTaller() {
               <div className="mt-6 space-y-4">
                 <TextField label="Su nombre" icon={Store} value={nombreEncargado} onChange={setNombreEncargado} placeholder="Carlos Ramírez" accent="signal" required />
                 <TextField label="Correo electrónico" type="email" icon={Mail} value={correo} onChange={setCorreo} placeholder="negocio@ejemplo.com" accent="signal" required />
-                <TextField label="Celular (WhatsApp)" icon={Phone} prefix="+57" value={celular} onChange={setCelular} placeholder="300 123 4567" accent="signal" required />
+                <TextField label="WhatsApp" icon={Phone} prefix="+57" value={celular} onChange={setCelular} placeholder="300 123 4567" accent="signal" required />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-3">
                   <PasswordField label="Contraseña" value={password} onChange={setPassword} accent="signal" required />
                   <PasswordField label="Confirmar" value={confirmar} onChange={setConfirmar} accent="signal" required />

@@ -168,7 +168,7 @@ export function TallerCrmModal({ open, onClose, organizationId, nombreTaller, ce
                 </a>
               ) : (
                 faltantes > 0 && (
-                  <span className="text-[11px] font-semibold text-slate-400">Sin celular registrado para escribirle</span>
+                  <span className="text-[11px] font-semibold text-slate-400">Sin WhatsApp registrado para escribirle</span>
                 )
               )}
             </div>

@@ -14,7 +14,16 @@ import { useAuth } from "@/lib/AuthProvider";
  *
  * Se monta DENTRO de RequireAuth (y, para Taller, dentro de
  * RequireTallerAprobado) en App.tsx, para los dos portales.
+ *
+ * DESACTIVADO POR DECISIÓN DE NEGOCIO (2026-09-10): la gente es reacia a dar
+ * la cédula apenas se registra, así que por ahora nadie ve este formulario —
+ * ni Cliente ni Taller. En su lugar, cada persona recibe de una su "llave"
+ * (@nombre + 3 dígitos, ver 0021_llave_registro_sin_cedula.sql) sin depender
+ * del documento. Cuando el negocio decida volver a pedir la cédula (para
+ * relacionarla con la llave que la persona ya tiene), basta con volver
+ * PEDIR_DOCUMENTO a `true` — el resto del componente sigue intacto.
  */
+const PEDIR_DOCUMENTO = false;
 
 const TIPOS_DOCUMENTO = [
   { value: "CC", label: "Cédula de ciudadanía (CC)" },
@@ -35,6 +44,7 @@ export function RequireDocumento({ children }: { children: React.ReactNode }) {
   // RequireAuth ya garantiza sesión + perfil antes de llegar acá; si por
   // alguna razón perfil todavía no cargó, no mostramos el formulario vacío.
   if (!perfil) return null;
+  if (!PEDIR_DOCUMENTO) return <>{children}</>;
   if (perfil.documentoTipo && perfil.documentoNumero) return <>{children}</>;
 
   async function handleSubmit(e: React.FormEvent) {

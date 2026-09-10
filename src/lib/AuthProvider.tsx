@@ -38,12 +38,14 @@ export interface Perfil {
   // taller registrado no debe poder "entrar" (ver CRM, publicar ofertas,
   // editar perfil) mientras esté pendiente, aunque ya tenga sesión activa.
   organizationStatus: EstadoAprobacion | null;
-  // Código propio del cliente ("llave") para invitar a otros y, más
-  // adelante, transferir puntos — ver src/lib/referidos.ts. Solo existe para
-  // rol='Cliente'. Es primer nombre + últimos 2 dígitos de la cédula (ej.
-  // "jheison68"); se calcula en guardar_documento_cliente() cuando el
-  // cliente guarda su documento por primera vez (0016_codigo_cliente_nombre_cedula.sql),
-  // no antes — porque hasta ese momento no se conoce su cédula.
+  // Llave de identificación propia ("@nombre+3 dígitos", ej. "jheison482")
+  // para invitar a otros y, más adelante, transferir puntos — ver
+  // src/lib/referidos.ts. Existe para Cliente Y Taller. Se asigna sola en
+  // handle_new_user() desde el momento del registro — ya no depende de la
+  // cédula (el negocio decidió, 2026-09-10, no pedirla por ahora; ver
+  // 0021_llave_registro_sin_cedula.sql y docs/SEGURIDAD.md). Cuando más
+  // adelante se guarde la cédula, queda relacionada con esta misma llave sin
+  // reemplazarla.
   codigoReferido: string | null;
 }
 

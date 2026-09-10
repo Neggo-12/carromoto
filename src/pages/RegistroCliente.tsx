@@ -82,7 +82,7 @@ export default function RegistroCliente() {
     if (step === 0) {
       if (!nombres.trim() || !apellidos.trim()) return fail("Indíquenos su nombre y apellido.");
       if (!/^\S+@\S+\.\S+$/.test(correo)) return fail("Ese correo electrónico no parece válido.");
-      if (celular.replace(/\D/g, "").length < 10) return fail("Ingrese su número de celular completo, con indicativo.");
+      if (celular.replace(/\D/g, "").length < 10) return fail("Ingrese su número de WhatsApp completo, con indicativo.");
       if (password.length < 6) return fail("La contraseña necesita al menos 6 caracteres.");
       if (password !== confirmar) return fail("Las contraseñas no coinciden.");
       return true;
@@ -234,7 +234,7 @@ export default function RegistroCliente() {
                   <TextField label="Apellidos" icon={User} value={apellidos} onChange={setApellidos} placeholder="Pérez" accent="brand" required />
                 </div>
                 <TextField label="Correo electrónico" type="email" icon={Mail} value={correo} onChange={setCorreo} placeholder="tucorreo@ejemplo.com" accent="brand" required />
-                <TextField label="Celular (WhatsApp)" icon={Phone} prefix="+57" value={celular} onChange={setCelular} placeholder="300 123 4567" accent="brand" required />
+                <TextField label="WhatsApp" icon={Phone} prefix="+57" value={celular} onChange={setCelular} placeholder="300 123 4567" accent="brand" required />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-3">
                   <PasswordField label="Contraseña" value={password} onChange={setPassword} accent="brand" required />
                   <PasswordField label="Confirmar" value={confirmar} onChange={setConfirmar} accent="brand" required />
@@ -247,14 +247,14 @@ export default function RegistroCliente() {
                     value={codigoReferido}
                     onChange={(v) => {
                       // Ya no se fuerza a mayúsculas: el código ahora es un
-                      // nombre legible (ej. "jheison68"), no un código
+                      // nombre legible (ej. "jheison482"), no un código
                       // aleatorio — la validación en el servidor no distingue
                       // mayúsculas de minúsculas de todas formas.
                       setCodigoReferido(v);
                       setEstadoCodigo("idle");
                     }}
                     onBlur={() => void validarCodigoReferido()}
-                    placeholder="Ej: jheison68"
+                    placeholder="Ej: jheison482"
                     accent="brand"
                     maxLength={24}
                   />

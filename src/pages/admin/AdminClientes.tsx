@@ -137,7 +137,7 @@ export default function AdminClientes() {
                     <Mail className="h-3 w-3 shrink-0" /> {c.correo}
                   </p>
                   <p className="flex items-center gap-1.5">
-                    <Phone className="h-3 w-3 shrink-0" /> {c.celular || "Sin celular"}
+                    <Phone className="h-3 w-3 shrink-0" /> {c.celular || "Sin WhatsApp"}
                   </p>
                 </div>
 

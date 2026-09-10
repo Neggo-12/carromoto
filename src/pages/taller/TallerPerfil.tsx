@@ -272,7 +272,7 @@ export default function TallerPerfil() {
             disabled
             helpText="Para cambiar su correo de acceso, escríbanos — todavía no se puede hacer desde aquí."
           />
-          <TextField label="Celular (WhatsApp)" icon={Phone} prefix="+57" value={data.celular} onChange={(v) => patch({ celular: v })} accent="signal" required />
+          <TextField label="WhatsApp" icon={Phone} prefix="+57" value={data.celular} onChange={(v) => patch({ celular: v })} accent="signal" required />
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <SearchableSelect label="Ciudad" value={data.ciudad} onChange={(v) => patch({ ciudad: v, barrio: "" })} options={CIUDADES} accent="signal" required />

@@ -13,8 +13,8 @@ export default function ClienteInicio() {
     if (resultado?.otorgado) setBienvenida(resultado);
   }, []);
 
-  // Solo el primer nombre en el saludo (igual que en la generación del
-  // código — ver generar_codigo_cliente() en 0016_codigo_cliente_nombre_cedula.sql).
+  // Solo el primer nombre en el saludo (igual que en la generación de la
+  // llave — ver generar_llave_registro() en 0021_llave_registro_sin_cedula.sql).
   const primerNombre = perfil?.nombre?.trim().split(/\s+/)[0] || null;
 
   return (
@@ -51,7 +51,7 @@ export default function ClienteInicio() {
               title="Su código: identifica su cuenta al invitar a otros y, más adelante, para transferir puntos."
             >
               <KeyRound className="h-3 w-3" />
-              llave: <span className="font-mono tracking-wide">{perfil.codigoReferido}</span>
+              llave: <span className="font-mono tracking-wide">@{perfil.codigoReferido}</span>
             </div>
           )}
         </div>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ShieldCheck, ShieldAlert, Users, Gift, ArrowRight, Store, Trophy, Loader2 } from "lucide-react";
+import { ShieldCheck, ShieldAlert, Users, Gift, ArrowRight, Store, Trophy, Loader2, KeyRound } from "lucide-react";
 import { EstadoBadge } from "@/components/taller/EstadoBadge";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/lib/AuthProvider";
@@ -58,7 +58,7 @@ export default function TallerResumen() {
   if (cargando) {
     return (
       <div className="flex items-center justify-center gap-2 py-24 text-sm text-muted-foreground">
-        <Loader2 className="h-4 w-4 animate-spin" /> Cargando tu panel...
+        <Loader2 className="h-4 w-4 animate-spin" /> Cargando su panel...
       </div>
     );
   }
@@ -66,7 +66,7 @@ export default function TallerResumen() {
   if (!data) {
     return (
       <div className="rounded-2xl border border-dashed border-black/10 p-10 text-center text-sm text-muted-foreground">
-        No pudimos cargar los datos de tu negocio.
+        No pudimos cargar los datos de su negocio.
       </div>
     );
   }
@@ -74,7 +74,18 @@ export default function TallerResumen() {
   return (
     <div className="space-y-6">
       <div className="space-y-1">
-        <h1 className="text-2xl font-black tracking-tight text-foreground sm:text-3xl">Hola, {data.nombreNegocio}</h1>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h1 className="text-2xl font-black tracking-tight text-foreground sm:text-3xl">Hola, {data.nombreNegocio}</h1>
+          {perfil?.codigoReferido && (
+            <div
+              className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-[11px] font-bold text-amber-700"
+              title="Su llave: identifica a su taller mientras no le pedimos su cédula/NIT."
+            >
+              <KeyRound className="h-3 w-3" />
+              llave: <span className="font-mono tracking-wide">@{perfil.codigoReferido}</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Estado de aprobación */}
@@ -88,13 +99,13 @@ export default function TallerResumen() {
             )}
           </div>
           <div>
-            <p className="text-sm font-bold text-foreground">Estado de tu taller</p>
+            <p className="text-sm font-bold text-foreground">Estado de su taller</p>
             <p className="text-xs text-muted-foreground">
               {data.estado === "aprobado"
-                ? "Ya podés recibir clientes."
+                ? "Ya puede recibir clientes."
                 : data.estado === "pendiente"
-                ? "El equipo de Taller Aval todavía está revisando tu registro."
-                : "Tu registro fue rechazado. Escribinos si creés que es un error."}
+                ? "El equipo de Tallergo todavía está revisando su registro."
+                : "Su registro fue rechazado. Escríbanos si cree que es un error."}
             </p>
           </div>
         </div>
@@ -118,7 +129,7 @@ export default function TallerResumen() {
             </div>
           </div>
           <p className="mt-3 text-3xl font-black tracking-tight text-foreground">{data.leadsNuevos}</p>
-          <p className="mt-1 text-[11px] text-muted-foreground">{data.leadsTotal} en tu CRM en total</p>
+          <p className="mt-1 text-[11px] text-muted-foreground">{data.leadsTotal} en su CRM en total</p>
         </div>
 
         <div className="rounded-2xl border border-black/[0.06] bg-white p-5 shadow-sm">
@@ -134,7 +145,7 @@ export default function TallerResumen() {
 
         <Link to="/portal/taller/score" className="rounded-2xl border border-black/[0.06] bg-white p-5 shadow-sm transition-all hover:border-signal-500/30 hover:shadow-md">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold text-muted-foreground">Tu score</p>
+            <p className="text-xs font-semibold text-muted-foreground">Su score</p>
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-black/5 text-muted-foreground">
               <Trophy className="h-4 w-4" />
             </div>
@@ -151,7 +162,7 @@ export default function TallerResumen() {
             <Store className="h-5 w-5 text-signal-600" />
           </div>
           <h3 className="mt-3 text-sm font-bold text-foreground">Mi perfil</h3>
-          <p className="mt-1 text-xs text-muted-foreground">Editá tus datos, servicios y horario.</p>
+          <p className="mt-1 text-xs text-muted-foreground">Edite sus datos, servicios y horario.</p>
           <span className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-signal-600 transition-all group-hover:gap-2">
             Editar <ArrowRight className="h-3.5 w-3.5" />
           </span>
@@ -162,7 +173,7 @@ export default function TallerResumen() {
             <Users className="h-5 w-5 text-signal-600" />
           </div>
           <h3 className="mt-3 text-sm font-bold text-foreground">CRM de Clientes</h3>
-          <p className="mt-1 text-xs text-muted-foreground">Clientes que te contactaron desde Buscar Talleres.</p>
+          <p className="mt-1 text-xs text-muted-foreground">Clientes que lo contactaron desde Buscar Talleres.</p>
           <span className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-signal-600 transition-all group-hover:gap-2">
             Ver CRM <ArrowRight className="h-3.5 w-3.5" />
           </span>
@@ -173,7 +184,7 @@ export default function TallerResumen() {
             <Gift className="h-5 w-5 text-signal-600" />
           </div>
           <h3 className="mt-3 text-sm font-bold text-foreground">Ofertas</h3>
-          <p className="mt-1 text-xs text-muted-foreground">Publicá promociones para que las vean los clientes.</p>
+          <p className="mt-1 text-xs text-muted-foreground">Publique promociones para que las vean los clientes.</p>
           <span className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-signal-600 transition-all group-hover:gap-2">
             Ver ofertas <ArrowRight className="h-3.5 w-3.5" />
           </span>
@@ -184,7 +195,7 @@ export default function TallerResumen() {
             <Trophy className="h-5 w-5 text-signal-600" />
           </div>
           <h3 className="mt-3 text-sm font-bold text-foreground">Mi Score</h3>
-          <p className="mt-1 text-xs text-muted-foreground">Mirá cómo te va en calidad y qué te falta para subir de nivel.</p>
+          <p className="mt-1 text-xs text-muted-foreground">Vea cómo le va en calidad y qué le falta para subir de nivel.</p>
           <span className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-signal-600 transition-all group-hover:gap-2">
             Ver score <ArrowRight className="h-3.5 w-3.5" />
           </span>
